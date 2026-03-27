@@ -567,7 +567,7 @@ function showDay(day) {
 showDay(0);
 
 // ===== SECTIONS =====
-function showSection(sec) {
+function showSection(sec, pushState=true) {
   ['schedule','map','overview','checklist','photos'].forEach(s => {
     const el = document.getElementById('section-'+s);
     if (el) el.style.display = s===sec ? 'block' : 'none';
@@ -578,11 +578,32 @@ function showSection(sec) {
   if (sec==='map') initMap();
   if (sec==='photos') loadPhotos();
   if (sec==='checklist') loadChecklist();
+  // Persist active tab in URL without triggering a reload
+  if (pushState && !document.body.classList.contains('tv-mode')) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', sec);
+    window.history.replaceState({}, '', '?' + params.toString());
+  }
 }
+
+// Restore tab from URL on load
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab');
+  if (tab && ['schedule','map','overview','checklist','photos'].includes(tab)) {
+    showSection(tab, false);
+  }
+});
 
 // ===== CHECKLIST (Supabase) =====
 async function loadChecklist() {
-  const { data } = await sb.from('trip_state').select('key,value');
+  // Reset all items to unchecked first
+  document.querySelectorAll('.check-item').forEach(el => {
+    el.classList.remove('checked');
+    el.querySelector('.check-box').textContent = '';
+  });
+  const { data, error } = await sb.from('trip_state').select('key,value');
+  if (error) { console.error('Checklist load error:', error); return; }
   if (!data) return;
   data.forEach(row => {
     if (row.value === 'true') {
@@ -601,8 +622,13 @@ async function toggleCheck(item) {
   const isChecked = item.classList.contains('checked');
   box.textContent = isChecked ? '✓' : '';
   const key = item.dataset.key;
-  if (key) {
-    await sb.from('trip_state').upsert({ key, value: String(isChecked) }, { onConflict: 'key' });
+  if (!key) return;
+  // Try update first, then insert if not exists
+  const { data: existing } = await sb.from('trip_state').select('key').eq('key', key).single();
+  if (existing) {
+    await sb.from('trip_state').update({ value: String(isChecked) }).eq('key', key);
+  } else {
+    await sb.from('trip_state').insert({ key, value: String(isChecked) });
   }
 }
 
