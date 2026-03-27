@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.esm.js" type="module" id="exifr-module"></script>
+<script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.cjs"></script>
 <style>
   :root {
     --sand: #F5EDD8; --rust: #C4622D; --canyon: #8B3A1F;
@@ -181,6 +183,26 @@
 
   /* UPLOAD PROGRESS */
   .upload-progress { background:#fff; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:none; box-shadow:0 1px 6px rgba(44,62,80,.08); }
+
+  /* PHOTO MAP */
+  #photo-map { width:100%; height:280px; border-radius:14px; margin-bottom:14px; }
+  .photo-map-wrap { position:relative; margin-bottom:14px; }
+  .photo-map-label { font-size:.7rem; font-weight:600; color:var(--warm-gray); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .photo-map-label::after { content:''; flex:1; height:1px; background:rgba(44,62,80,.1); }
+
+  /* PHOTO PIN on map */
+  .photo-pin { width:44px; height:44px; border-radius:10px; border:3px solid #fff; overflow:hidden; box-shadow:0 3px 10px rgba(0,0,0,.3); cursor:pointer; transition:transform .15s; }
+  .photo-pin:hover { transform:scale(1.15); }
+  .photo-pin img { width:100%; height:100%; object-fit:cover; }
+
+  /* LIGHTBOX */
+  .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:9999; align-items:center; justify-content:center; padding:20px; }
+  .lightbox.open { display:flex; }
+  .lightbox-inner { position:relative; max-width:94vw; max-height:90vh; }
+  .lightbox-inner img { max-width:100%; max-height:85vh; border-radius:12px; display:block; }
+  .lightbox-caption { color:rgba(255,255,255,.7); font-size:.8rem; text-align:center; margin-top:10px; }
+  .lightbox-close { position:absolute; top:-14px; right:-14px; width:32px; height:32px; background:var(--rust); border:none; border-radius:50%; color:#fff; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+  .no-gps-notice { background:#fff8e7; border-radius:10px; padding:10px 13px; margin-bottom:10px; font-size:.74rem; color:#8a6d00; display:none; }
   .progress-bar-wrap { background:#f0f0f0; border-radius:10px; height:6px; margin-top:8px; overflow:hidden; }
   .progress-bar { background:var(--rust); height:100%; border-radius:10px; transition:width .3s; width:0%; }
   .progress-text { font-size:.76rem; color:var(--warm-gray); }
@@ -483,20 +505,44 @@
 
 <!-- ===== PHOTOS ===== -->
 <div id="section-photos" style="display:none; padding:14px 14px 100px;">
-  <div class="sync-notice"><div class="icon">📸</div><p><strong>Photos sync across all devices instantly</strong>Upload from any phone — appears on your wife's phone and the TV within seconds. All Leone family memories in one place.</p></div>
+  <div class="sync-notice"><div class="icon">📸</div><p><strong>Photos sync across all devices instantly</strong>Upload from any phone — appears on all devices. Photos with GPS data get pinned to the memory map!</p></div>
+
   <div class="photo-upload-zone" onclick="document.getElementById('photo-input').click()">
     <span class="upload-icon">📷</span>
     <span class="upload-text">Add a Leone Family Photo</span>
     <span class="upload-sub">Tap to take a photo or choose from camera roll</span>
   </div>
   <input type="file" id="photo-input" accept="image/*" multiple onchange="handlePhotos(event)">
+
   <div class="upload-progress" id="upload-progress">
     <span class="progress-text" id="progress-text">Uploading...</span>
     <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
   </div>
-  <div id="photo-empty" class="empty-photos"><div style="font-size:2rem;margin-bottom:8px;">🌵</div><div>Leone family trip photos will appear here.<br>Both phones share the same album!</div></div>
+
+  <div class="no-gps-notice" id="no-gps-notice">
+    📍 Some photos didn't have GPS data — they'll appear in the grid below but not on the map. Make sure your camera has location access enabled.
+  </div>
+
+  <!-- MEMORY MAP -->
+  <div class="photo-map-label">📍 Memory Map</div>
+  <div class="photo-map-wrap">
+    <div id="photo-map"></div>
+  </div>
+
+  <!-- PHOTO GRID -->
+  <div class="photo-map-label">All Photos</div>
+  <div id="photo-empty" class="empty-photos"><div style="font-size:2rem;margin-bottom:8px;">🌵</div><div>Leone family trip photos will appear here.<br>Photos taken with location on get pinned to the map!</div></div>
   <div id="photo-loading" class="loading-photos" style="display:none;">Loading photos...</div>
   <div id="photo-grid" class="photo-grid"></div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <div class="lightbox-inner">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightbox-img" src="" alt="">
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+  </div>
 </div>
 
 <!-- TV OVERLAY -->
@@ -639,23 +685,50 @@ async function handlePhotos(event) {
   const progress = document.getElementById('upload-progress');
   const bar = document.getElementById('progress-bar');
   const text = document.getElementById('progress-text');
+  const noGps = document.getElementById('no-gps-notice');
   progress.style.display = 'block';
-  let done = 0;
+  noGps.style.display = 'none';
+  let done = 0, missingGps = 0;
+
   for (const file of files) {
+    text.textContent = `Reading photo ${done+1} of ${files.length}...`;
+    bar.style.width = `${(done/files.length)*80}%`;
+
+    // Extract GPS from EXIF before compressing
+    let photoLat = null, photoLng = null;
+    try {
+      if (typeof exifr !== 'undefined') {
+        const gps = await exifr.gps(file);
+        if (gps && gps.latitude && gps.longitude) {
+          photoLat = gps.latitude;
+          photoLng = gps.longitude;
+        }
+      }
+    } catch(e) { console.warn('EXIF read failed:', e); }
+
+    if (!photoLat) missingGps++;
+
     const compressed = await compressImage(file);
     const filename = `leone_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
     text.textContent = `Uploading ${done+1} of ${files.length}...`;
-    bar.style.width = `${(done/files.length)*100}%`;
-    const { data: uploadData, error } = await sb.storage.from('trip-photos').upload(filename, compressed, { contentType: 'image/jpeg' });
+
+    const { error } = await sb.storage.from('trip-photos').upload(filename, compressed, { contentType: 'image/jpeg' });
     if (!error) {
       const { data: { publicUrl } } = sb.storage.from('trip-photos').getPublicUrl(filename);
-      const caption = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-      await sb.from('trip_photos').insert({ url: publicUrl, caption });
+      const caption = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric', hour:'numeric',minute:'2-digit'});
+      await sb.from('trip_photos').insert({
+        url: publicUrl,
+        caption,
+        lat: photoLat,
+        lng: photoLng
+      });
     }
     done++;
   }
+
   bar.style.width = '100%';
   text.textContent = `${done} photo${done>1?'s':''} uploaded!`;
+  if (missingGps > 0) noGps.style.display = 'block';
   setTimeout(() => { progress.style.display = 'none'; bar.style.width='0%'; }, 2000);
   event.target.value = '';
   loadPhotos();
@@ -682,6 +755,8 @@ async function compressImage(file) {
   });
 }
 
+let photoMap = null;
+
 async function loadPhotos() {
   const loading = document.getElementById('photo-loading');
   const empty = document.getElementById('photo-empty');
@@ -689,16 +764,96 @@ async function loadPhotos() {
   loading.style.display = 'block';
   empty.style.display = 'none';
   grid.innerHTML = '';
+
   const { data, error } = await sb.from('trip_photos').select('*').order('uploaded_at', { ascending: false });
   loading.style.display = 'none';
-  if (!data || data.length === 0) { empty.style.display = 'block'; return; }
+
+  if (!data || data.length === 0) { empty.style.display = 'block'; initPhotoMap([]); return; }
   empty.style.display = 'none';
+
+  // Render grid with lightbox trigger
   grid.innerHTML = data.map(p => `
-    <div class="photo-item">
+    <div class="photo-item" onclick="openLightbox('${p.url}','${(p.caption||'').replace(/'/g,"\'")}')">
       <img src="${p.url}" alt="Leone trip photo" loading="lazy">
       <div class="photo-caption">${p.caption||''}</div>
     </div>
   `).join('');
+
+  // Init memory map with pinned photos
+  initPhotoMap(data);
+}
+
+async function initPhotoMap(photos) {
+  // Init map if needed
+  if (!photoMap) {
+    photoMap = L.map('photo-map', {zoomControl:true, attributionControl:false}).setView([36.5,-112],5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(photoMap);
+
+    // Draw the trip route on photo map too (same OSRM call)
+    try {
+      const all = routePoints.map(p => `${p.lng},${p.lat}`);
+      const seg1 = all.slice(0,6).join(';');
+      const seg2 = all.slice(5).join(';');
+      const fetchSeg = async (coords) => {
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+        const json = await res.json();
+        return json.routes?.[0]?.geometry?.coordinates || [];
+      };
+      const [s1, s2] = await Promise.all([fetchSeg(seg1), fetchSeg(seg2)]);
+      const latlngs = [...s1,...s2].map(c=>[c[1],c[0]]);
+      if (latlngs.length) L.polyline(latlngs,{color:'#C4622D',weight:3,opacity:.5}).addTo(photoMap);
+    } catch(e) {}
+
+    // Add subtle stop markers
+    routePoints.forEach((pt,i) => {
+      const icon = L.divIcon({html:`<div style="background:#fff;border:1.5px solid #C4622D;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#C4622D;">${i+1}</div>`,className:'',iconSize:[18,18],iconAnchor:[9,9]});
+      L.marker([pt.lat,pt.lng],{icon}).addTo(photoMap);
+    });
+  } else {
+    // Clear existing photo pins before re-adding
+    photoMap.eachLayer(layer => {
+      if (layer._isPhotoPin) photoMap.removeLayer(layer);
+    });
+  }
+
+  // Add photo pins for photos with GPS
+  const geoPhotos = photos.filter(p => p.lat && p.lng);
+  let bounds = [];
+
+  geoPhotos.forEach(p => {
+    const icon = L.divIcon({
+      html: `<div class="photo-pin"><img src="${p.url}" alt=""/></div>`,
+      className: '',
+      iconSize: [44,44],
+      iconAnchor: [22,22]
+    });
+    const marker = L.marker([p.lat, p.lng], {icon}).addTo(photoMap);
+    marker._isPhotoPin = true;
+    marker.on('click', () => openLightbox(p.url, p.caption || ''));
+    bounds.push([p.lat, p.lng]);
+  });
+
+  // Fit map to show all photo pins if we have any
+  if (bounds.length > 0) {
+    photoMap.fitBounds(bounds, {padding:[40,40], maxZoom:10});
+  }
+
+  // Invalidate size in case tab was hidden when map initialized
+  setTimeout(() => photoMap.invalidateSize(), 100);
+}
+
+function openLightbox(url, caption) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox-caption').textContent = caption;
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox(e) {
+  if (e && e.target !== document.getElementById('lightbox') && !e.target.classList.contains('lightbox-close')) return;
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightbox-img').src = '';
+  document.body.style.overflow = '';
 }
 
 // ===== LIVE MAP (Supabase) =====
