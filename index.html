@@ -715,22 +715,56 @@ const routePoints = [
   {name:'Pismo Beach, CA', lat:35.1428, lng:-120.6413},
 ];
 
-function initMap() {
+async function initMap() {
   if (map) { map.invalidateSize(); return; }
   map = L.map('trip-map', {zoomControl:true, attributionControl:false}).setView([36.5,-112],5);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
-  L.polyline(routePoints.map(p=>[p.lat,p.lng]),{color:'#C4622D',weight:3,opacity:.7,dashArray:'8,6'}).addTo(map);
+
+  // Draw numbered stop markers
   routePoints.forEach((pt,i) => {
     const icon = L.divIcon({html:`<div style="background:#fff;border:2px solid #C4622D;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#C4622D;box-shadow:0 2px 6px rgba(0,0,0,.2);">${i+1}</div>`,className:'',iconSize:[26,26],iconAnchor:[13,13]});
     L.marker([pt.lat,pt.lng],{icon}).addTo(map).bindPopup(`<b>${pt.name}</b><br>Stop ${i+1}`);
   });
+
+  // Draw real road route via OSRM (free routing API, no key needed)
+  // OSRM has a 10-waypoint limit so we split into two segments and merge
+  try {
+    const all = routePoints.map(p => `${p.lng},${p.lat}`);
+    // Segment 1: stops 1-5 (EDH → Paso → Sedona → Buckeye → GC → Zion)
+    const seg1coords = all.slice(0,6).join(';');
+    // Segment 2: stops 5-8 (Zion → Capitol Reef → Pismo → EDH)  
+    const seg2coords = all.slice(5).join(';');
+
+    const fetchSegment = async (coords) => {
+      const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+      const res = await fetch(url);
+      const json = await res.json();
+      return json.routes?.[0]?.geometry?.coordinates || [];
+    };
+
+    const [seg1, seg2] = await Promise.all([fetchSegment(seg1coords), fetchSegment(seg2coords)]);
+    const allCoords = [...seg1, ...seg2];
+
+    if (allCoords.length > 0) {
+      // OSRM returns [lng, lat], Leaflet needs [lat, lng]
+      const latlngs = allCoords.map(c => [c[1], c[0]]);
+      L.polyline(latlngs, {color:'#C4622D', weight:4, opacity:0.8}).addTo(map);
+      console.log('[Map] Real road route drawn:', latlngs.length, 'points');
+    } else {
+      throw new Error('No route returned');
+    }
+  } catch(e) {
+    console.warn('[Map] Road routing failed, using straight lines:', e);
+    L.polyline(routePoints.map(p=>[p.lat,p.lng]),{color:'#C4622D',weight:3,opacity:.6,dashArray:'8,6'}).addTo(map);
+  }
+
   loadSavedLocation();
-  // Poll Supabase every 30s on ALL devices so computer + TV stay live
   if (!window._mapPollStarted) {
     window._mapPollStarted = true;
     setInterval(loadSavedLocation, 30000);
   }
 }
+
 
 async function loadSavedLocation() {
   // Use maybeSingle() instead of single() — returns null instead of 406 when no row exists
