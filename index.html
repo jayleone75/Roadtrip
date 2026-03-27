@@ -725,6 +725,11 @@ function initMap() {
     L.marker([pt.lat,pt.lng],{icon}).addTo(map).bindPopup(`<b>${pt.name}</b><br>Stop ${i+1}`);
   });
   loadSavedLocation();
+  // Poll Supabase every 30s on ALL devices so computer + TV stay live
+  if (!window._mapPollStarted) {
+    window._mapPollStarted = true;
+    setInterval(loadSavedLocation, 30000);
+  }
 }
 
 async function loadSavedLocation() {
@@ -737,7 +742,12 @@ async function loadSavedLocation() {
 
 function showLocationOnMap(lat, lng, timeStr) {
   if (!map) return;
-  const icon = L.divIcon({html:`<div style="background:#C4622D;border:3px solid #fff;border-radius:50%;width:22px;height:22px;box-shadow:0 2px 8px rgba(196,98,45,.6);"></div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]});
+  const icon = L.divIcon({
+    html:`<div style="position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+      <div style="position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(196,98,45,0.25);animation:pulse 2s infinite;"></div>
+      <div style="position:absolute;width:22px;height:22px;background:#C4622D;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(196,98,45,.8);display:flex;align-items:center;justify-content:center;font-size:10px;">🚐</div>
+    </div>`,
+    className:'',iconSize:[40,40],iconAnchor:[20,20]});
   if (userMarker) map.removeLayer(userMarker);
   userMarker = L.marker([lat,lng],{icon}).addTo(map).bindPopup('🚐 Leone Family is here!');
   map.setView([lat,lng],9);
