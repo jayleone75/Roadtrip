@@ -689,38 +689,66 @@ function extractGPS(file) {
         const buf = e.target.result;
         const view = new DataView(buf);
 
-        // Verify JPEG signature
-        if (view.getUint16(0) !== 0xFFD8) { resolve(null); return; }
+        // Log file size and first bytes for mobile debugging
+        const firstBytes = Array.from(new Uint8Array(buf.slice(0, 32)))
+          .map(b => '0x'+b.toString(16).padStart(2,'0')).join(' ');
+        console.log('[EXIF] File:', file.name, 'size:', buf.byteLength, 'bytes');
+        console.log('[EXIF] First 32 bytes:', firstBytes);
 
+        // Verify JPEG signature
+        if (view.getUint16(0) !== 0xFFD8) {
+          console.log('[EXIF] Not a JPEG — first bytes dont match 0xFFD8');
+          resolve(null); return;
+        }
+
+        // Scan all markers and log them
         let offset = 2;
-        while (offset < view.byteLength - 2) {
+        const markersFound = [];
+        while (offset < view.byteLength - 4) {
           const marker = view.getUint16(offset);
           offset += 2;
+          markersFound.push('0x'+marker.toString(16));
 
-          // APP1 marker contains EXIF
           if (marker === 0xFFE1) {
             const segLen = view.getUint16(offset);
+            console.log('[EXIF] Found APP1 marker, segment length:', segLen);
             // Check for "Exif" header
+            const b2 = offset+2, b3 = offset+3, b4 = offset+4, b5 = offset+5;
             const exifHeader = String.fromCharCode(
-              view.getUint8(offset+2), view.getUint8(offset+3),
-              view.getUint8(offset+4), view.getUint8(offset+5)
+              view.getUint8(b2), view.getUint8(b3),
+              view.getUint8(b4), view.getUint8(b5)
             );
+            console.log('[EXIF] APP1 header chars:', exifHeader, '(expected: Exif)');
             if (exifHeader === 'Exif') {
-              const tiffStart = offset + 8; // skip length(2) + "Exif"(4) + null(2)
+              const tiffStart = offset + 8;
+              console.log('[EXIF] TIFF starts at offset:', tiffStart);
               const gps = parseGPSFromTIFF(view, tiffStart);
+              console.log('[EXIF] parseGPSFromTIFF result:', gps);
               resolve(gps);
               return;
             }
+            // Not Exif — skip this APP1 (could be XMP)
             offset += segLen;
-          } else if ((marker & 0xFF00) === 0xFF00) {
-            // Skip other markers
-            offset += view.getUint16(offset);
+          } else if (marker === 0xFFE0) {
+            // APP0 (JFIF) — log and skip
+            const segLen = view.getUint16(offset);
+            console.log('[EXIF] Found APP0/JFIF marker — this phone may serve JFIF stripped of EXIF');
+            offset += segLen;
+          } else if ((marker & 0xFF00) === 0xFF00 && marker !== 0xFFDA) {
+            if (offset + 2 > view.byteLength) break;
+            const segLen = view.getUint16(offset);
+            offset += segLen;
           } else {
             break;
           }
         }
+        console.log('[EXIF] All markers scanned:', markersFound.join(', '));
+        console.log('[EXIF] No Exif APP1 found — EXIF was stripped by OS/browser');
         resolve(null);
-      } catch(e) { resolve(null); }
+      } catch(e) {
+        console.error('[EXIF] extractGPS crash:', e.message);
+        resolve(null);
+      }
     };
     reader.onerror = () => resolve(null);
     reader.readAsArrayBuffer(file);
@@ -829,20 +857,53 @@ async function handlePhotos(event) {
     text.textContent = `Reading photo ${done+1} of ${files.length}...`;
     bar.style.width = `${(done/files.length)*80}%`;
 
-    // Extract GPS from JPEG EXIF using our own parser (no external library)
+    // Step 1: Try EXIF GPS from file (works on desktop)
     let photoLat = null, photoLng = null;
     try {
       const coords = await extractGPS(file);
       if (coords) {
         photoLat = coords.lat;
         photoLng = coords.lng;
-        console.log('[EXIF] ✅ Got GPS for', file.name, ':', photoLat, photoLng);
-      } else {
-        console.log('[EXIF] No GPS found in', file.name);
+        console.log('[GPS] ✅ Got GPS from EXIF:', photoLat, photoLng);
       }
-    } catch(e) { console.warn('[EXIF] Parse error:', e.message); }
+    } catch(e) { console.warn('[GPS] EXIF parse error:', e.message); }
 
-    if (!photoLat) missingGps++;
+    // Step 2: If no EXIF GPS (common on mobile), use live device GPS
+    if (!photoLat && navigator.geolocation) {
+      try {
+        console.log('[GPS] No EXIF GPS — trying live device GPS...');
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 8000,
+            maximumAge: 60000 // accept a cached position up to 1 min old
+          });
+        });
+        photoLat = pos.coords.latitude;
+        photoLng = pos.coords.longitude;
+        console.log('[GPS] ✅ Got live GPS:', photoLat, photoLng);
+      } catch(e) {
+        console.log('[GPS] Live GPS unavailable:', e.message);
+      }
+    }
+
+    // Step 3: Fall back to last known location from Supabase
+    if (!photoLat) {
+      try {
+        const { data } = await sb.from('trip_state').select('value').eq('key','gps_location').maybeSingle();
+        if (data?.value) {
+          const loc = JSON.parse(data.value);
+          photoLat = loc.lat;
+          photoLng = loc.lng;
+          console.log('[GPS] ✅ Using last known location:', photoLat, photoLng);
+        }
+      } catch(e) { console.warn('[GPS] Could not load last known location'); }
+    }
+
+    if (!photoLat) {
+      missingGps++;
+      console.log('[GPS] No location available for this photo');
+    }
 
     const compressed = await compressImage(file);
     const filename = `leone_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
