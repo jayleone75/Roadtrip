@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/exifr@7/dist/full.umd.cjs.js"></script>
+
 <style>
   :root {
     --sand: #F5EDD8; --rust: #C4622D; --canyon: #8B3A1F;
@@ -678,6 +678,115 @@ async function toggleCheck(item) {
 }
 
 // ===== PHOTOS (Supabase) =====
+// ===== BUILT-IN JPEG EXIF GPS PARSER (no external library) =====
+function extractGPS(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const buf = e.target.result;
+        const view = new DataView(buf);
+
+        // Verify JPEG signature
+        if (view.getUint16(0) !== 0xFFD8) { resolve(null); return; }
+
+        let offset = 2;
+        while (offset < view.byteLength - 2) {
+          const marker = view.getUint16(offset);
+          offset += 2;
+
+          // APP1 marker contains EXIF
+          if (marker === 0xFFE1) {
+            const segLen = view.getUint16(offset);
+            // Check for "Exif" header
+            const exifHeader = String.fromCharCode(
+              view.getUint8(offset+2), view.getUint8(offset+3),
+              view.getUint8(offset+4), view.getUint8(offset+5)
+            );
+            if (exifHeader === 'Exif') {
+              const tiffStart = offset + 8; // skip length(2) + "Exif"(4) + null(2)
+              const gps = parseGPSFromTIFF(view, tiffStart);
+              resolve(gps);
+              return;
+            }
+            offset += segLen;
+          } else if ((marker & 0xFF00) === 0xFF00) {
+            // Skip other markers
+            offset += view.getUint16(offset);
+          } else {
+            break;
+          }
+        }
+        resolve(null);
+      } catch(e) { resolve(null); }
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function parseGPSFromTIFF(view, tiffStart) {
+  try {
+    // Byte order
+    const byteOrder = view.getUint16(tiffStart);
+    const le = byteOrder === 0x4949; // little endian
+    const readUint16 = (o) => view.getUint16(tiffStart + o, le);
+    const readUint32 = (o) => view.getUint32(tiffStart + o, le);
+
+    // IFD0 offset
+    const ifd0Offset = readUint32(4);
+    const ifd0Count = readUint16(ifd0Offset);
+
+    // Find GPS IFD pointer (tag 0x8825) in IFD0
+    let gpsIFDOffset = null;
+    for (let i = 0; i < ifd0Count; i++) {
+      const entryOffset = ifd0Offset + 2 + i * 12;
+      const tag = readUint16(entryOffset);
+      if (tag === 0x8825) {
+        gpsIFDOffset = readUint32(entryOffset + 8);
+        break;
+      }
+    }
+    if (!gpsIFDOffset) return null;
+
+    // Parse GPS IFD
+    const gpsCount = readUint16(gpsIFDOffset);
+    const gpsData = {};
+
+    for (let i = 0; i < gpsCount; i++) {
+      const entryOffset = gpsIFDOffset + 2 + i * 12;
+      const tag = readUint16(entryOffset);
+      const type = readUint16(entryOffset + 2);
+      const count = readUint32(entryOffset + 4);
+
+      if (tag === 1 || tag === 3) {
+        // GPSLatitudeRef / GPSLongitudeRef — ASCII
+        gpsData[tag] = String.fromCharCode(view.getUint8(tiffStart + entryOffset + 8));
+      } else if (tag === 2 || tag === 4) {
+        // GPSLatitude / GPSLongitude — 3 rationals
+        const valOffset = readUint32(entryOffset + 8);
+        const deg = readUint32(valOffset) / readUint32(valOffset + 4);
+        const min = readUint32(valOffset + 8) / readUint32(valOffset + 12);
+        const sec = readUint32(valOffset + 16) / readUint32(valOffset + 20);
+        gpsData[tag] = deg + min / 60 + sec / 3600;
+      }
+    }
+
+    if (!gpsData[2] || !gpsData[4]) return null;
+
+    let lat = gpsData[2];
+    let lng = gpsData[4];
+    if (gpsData[1] === 'S') lat = -lat;
+    if (gpsData[3] === 'W') lng = -lng;
+
+    // Sanity check
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    if (lat === 0 && lng === 0) return null;
+
+    return { lat, lng };
+  } catch(e) { return null; }
+}
+
 async function handlePhotos(event) {
   const files = Array.from(event.target.files);
   if (!files.length) return;
@@ -693,32 +802,19 @@ async function handlePhotos(event) {
     text.textContent = `Reading photo ${done+1} of ${files.length}...`;
     bar.style.width = `${(done/files.length)*80}%`;
 
-    // Extract GPS from EXIF before compressing
+    // Extract GPS from JPEG EXIF using our own parser (no external library)
     let photoLat = null, photoLng = null;
     try {
-      console.log('[EXIF] exifr available:', typeof exifr);
-      if (typeof exifr !== 'undefined') {
-        // Try GPS extraction
-        const gps = await exifr.gps(file);
-        console.log('[EXIF] GPS result for', file.name, ':', gps);
-        if (gps && gps.latitude && gps.longitude) {
-          photoLat = gps.latitude;
-          photoLng = gps.longitude;
-          console.log('[EXIF] ✅ Got GPS:', photoLat, photoLng);
-        } else {
-          // Try full parse as fallback
-          const full = await exifr.parse(file, ['GPSLatitude','GPSLongitude','GPSLatitudeRef','GPSLongitudeRef']);
-          console.log('[EXIF] Full parse result:', full);
-          if (full?.GPSLatitude) {
-            photoLat = exifr.gps(full) ? (await exifr.gps(file))?.latitude : null;
-          }
-        }
+      const coords = await extractGPS(file);
+      if (coords) {
+        photoLat = coords.lat;
+        photoLng = coords.lng;
+        console.log('[EXIF] ✅ Got GPS for', file.name, ':', photoLat, photoLng);
       } else {
-        console.warn('[EXIF] exifr library not loaded!');
+        console.log('[EXIF] No GPS found in', file.name);
       }
-    } catch(e) { console.warn('[EXIF] Read failed:', e.message, e); }
+    } catch(e) { console.warn('[EXIF] Parse error:', e.message); }
 
-    console.log('[EXIF] Final coords for', file.name, '- lat:', photoLat, 'lng:', photoLng);
     if (!photoLat) missingGps++;
 
     const compressed = await compressImage(file);
