@@ -403,14 +403,14 @@
   <button class="map-share-btn" id="share-btn" onclick="toggleSharing()">📍 Start Sharing My Location</button>
   <div class="tv-link-box">
     <span class="tv-link-label">📺 TV / Big Screen Link</span>
-    <span class="tv-link" id="tv-url">roadtrip.jleone.ai?tv=1</span>
+    <span class="tv-link" id="tv-url">roadtrip.jayleone.ai?tv=1</span>
     <button class="tv-copy-btn" onclick="copyTvLink()">Copy Link</button>
   </div>
   <div id="trip-map"></div>
   <div style="background:#fff;border-radius:12px;padding:14px;font-size:.78rem;color:var(--warm-gray);line-height:1.6;box-shadow:0 2px 8px rgba(44,62,80,.06);margin-top:12px;">
     <strong style="color:var(--dusk);display:block;margin-bottom:4px;">How it works</strong>
     Tap Start Sharing → browser asks for location permission once → updates every 30 seconds.<br>
-    TV at <strong>roadtrip.jleone.ai?tv=1</strong> shows fullscreen map — kids watch the van move in real time.<br>
+    TV at <strong>roadtrip.jayleone.ai?tv=1</strong> shows fullscreen map — kids watch the van move in real time.<br>
     Both phones can share or just view — no account needed.
   </div>
 </div>
@@ -468,10 +468,10 @@
   <div class="check-group">
     <div class="check-group-title">📱 Before You Leave</div>
     <div class="check-item" data-key="pre1" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Download Offline Maps</span><span class="check-sub">Utah Byway 12 + Grand Canyon — spotty cell service</span></div><span class="urgent-tag">DO THIS</span></div>
-    <div class="check-item" data-key="pre2" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Share roadtrip.jleone.ai with Wife</span><span class="check-sub">Bookmark on both phones before leaving</span></div></div>
+    <div class="check-item" data-key="pre2" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Share roadtrip.jayleone.ai with Wife</span><span class="check-sub">Bookmark on both phones before leaving</span></div></div>
     <div class="check-item" data-key="pre3" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Check Zion Shuttle Schedule</span><span class="check-sub">Confirm operating dates for early April</span></div></div>
     <div class="check-item" data-key="pre4" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Note Hotel Cancellation Deadlines</span><span class="check-sub">Add to calendar for each property</span></div></div>
-    <div class="check-item" data-key="pre5" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Set TV to roadtrip.jleone.ai?tv=1</span><span class="check-sub">Test the live map on the TV browser before leaving</span></div></div>
+    <div class="check-item" data-key="pre5" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Set TV to roadtrip.jayleone.ai?tv=1</span><span class="check-sub">Test the live map on the TV browser before leaving</span></div></div>
   </div>
   <div class="check-group">
     <div class="check-group-title">📅 5–7 Days Before</div>
@@ -791,7 +791,7 @@ function toggleSharing() {
 }
 
 function copyTvLink() {
-  const url = 'https://roadtrip.jleone.ai?tv=1';
+  const url = 'https://roadtrip.jayleone.ai?tv=1';
   navigator.clipboard.writeText(url).then(() => {
     const btn = document.querySelector('.tv-copy-btn');
     btn.textContent = '✓ Copied!';
