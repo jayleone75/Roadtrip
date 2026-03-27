@@ -621,8 +621,10 @@ function showSection(sec, pushState=true) {
   const btn = document.getElementById('nav-'+sec);
   if (btn) btn.classList.add('active');
   if (sec==='map') initMap();
-  if (sec==='photos') loadPhotos();
+  if (sec==='photos') { loadPhotos(); startPhotoPolling(); }
   if (sec==='checklist') loadChecklist();
+  // Stop photo polling when leaving photos tab
+  if (sec!=='photos') stopPhotoPolling();
   // Persist active tab in URL without triggering a reload
   if (pushState && !document.body.classList.contains('tv-mode')) {
     const params = new URLSearchParams(window.location.search);
@@ -890,6 +892,23 @@ async function compressImage(file) {
 }
 
 let photoMap = null;
+let photoPollingInterval = null;
+
+function startPhotoPolling() {
+  if (photoPollingInterval) return; // already running
+  photoPollingInterval = setInterval(() => {
+    console.log('[Photos] Auto-refreshing...');
+    loadPhotos();
+  }, 15000); // refresh every 15 seconds
+}
+
+function stopPhotoPolling() {
+  if (photoPollingInterval) {
+    clearInterval(photoPollingInterval);
+    photoPollingInterval = null;
+  }
+}
+
 
 async function loadPhotos() {
   const loading = document.getElementById('photo-loading');
