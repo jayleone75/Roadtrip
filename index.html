@@ -8,8 +8,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.esm.js" type="module" id="exifr-module"></script>
-<script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.cjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.cjs"></script>
 <style>
   :root {
     --sand: #F5EDD8; --rust: #C4622D; --canyon: #8B3A1F;
@@ -697,15 +696,29 @@ async function handlePhotos(event) {
     // Extract GPS from EXIF before compressing
     let photoLat = null, photoLng = null;
     try {
+      console.log('[EXIF] exifr available:', typeof exifr);
       if (typeof exifr !== 'undefined') {
+        // Try GPS extraction
         const gps = await exifr.gps(file);
+        console.log('[EXIF] GPS result for', file.name, ':', gps);
         if (gps && gps.latitude && gps.longitude) {
           photoLat = gps.latitude;
           photoLng = gps.longitude;
+          console.log('[EXIF] ✅ Got GPS:', photoLat, photoLng);
+        } else {
+          // Try full parse as fallback
+          const full = await exifr.parse(file, ['GPSLatitude','GPSLongitude','GPSLatitudeRef','GPSLongitudeRef']);
+          console.log('[EXIF] Full parse result:', full);
+          if (full?.GPSLatitude) {
+            photoLat = exifr.gps(full) ? (await exifr.gps(file))?.latitude : null;
+          }
         }
+      } else {
+        console.warn('[EXIF] exifr library not loaded!');
       }
-    } catch(e) { console.warn('EXIF read failed:', e); }
+    } catch(e) { console.warn('[EXIF] Read failed:', e.message, e); }
 
+    console.log('[EXIF] Final coords for', file.name, '- lat:', photoLat, 'lng:', photoLng);
     if (!photoLat) missingGps++;
 
     const compressed = await compressImage(file);
