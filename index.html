@@ -848,16 +848,24 @@ async function handlePhotos(event) {
     const filename = `leone_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
     text.textContent = `Uploading ${done+1} of ${files.length}...`;
 
-    const { error } = await sb.storage.from('trip-photos').upload(filename, compressed, { contentType: 'image/jpeg' });
-    if (!error) {
+    const { error: uploadError } = await sb.storage.from('trip-photos').upload(filename, compressed, { contentType: 'image/jpeg' });
+    if (!uploadError) {
       const { data: { publicUrl } } = sb.storage.from('trip-photos').getPublicUrl(filename);
       const caption = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric', hour:'numeric',minute:'2-digit'});
-      await sb.from('trip_photos').insert({
+      console.log('[Upload] Inserting photo with lat:', photoLat, 'lng:', photoLng);
+      const { data: insertData, error: insertError } = await sb.from('trip_photos').insert({
         url: publicUrl,
         caption,
         lat: photoLat,
         lng: photoLng
-      });
+      }).select();
+      if (insertError) {
+        console.error('[Upload] Insert error:', insertError.message, insertError);
+      } else {
+        console.log('[Upload] ✅ Inserted row:', insertData);
+      }
+    } else {
+      console.error('[Upload] Storage error:', uploadError.message);
     }
     done++;
   }
