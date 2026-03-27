@@ -727,30 +727,34 @@ function extractGPS(file) {
 
 function parseGPSFromTIFF(view, tiffStart) {
   try {
-    // Byte order
     const byteOrder = view.getUint16(tiffStart);
-    const le = byteOrder === 0x4949; // little endian
+    const le = byteOrder === 0x4949;
+    console.log('[EXIF] Byte order:', le ? 'little-endian' : 'big-endian', '(0x'+byteOrder.toString(16)+')');
+
     const readUint16 = (o) => view.getUint16(tiffStart + o, le);
     const readUint32 = (o) => view.getUint32(tiffStart + o, le);
 
-    // IFD0 offset
     const ifd0Offset = readUint32(4);
     const ifd0Count = readUint16(ifd0Offset);
+    console.log('[EXIF] IFD0 offset:', ifd0Offset, 'entries:', ifd0Count);
 
-    // Find GPS IFD pointer (tag 0x8825) in IFD0
     let gpsIFDOffset = null;
+    const tagsSeen = [];
     for (let i = 0; i < ifd0Count; i++) {
       const entryOffset = ifd0Offset + 2 + i * 12;
       const tag = readUint16(entryOffset);
+      tagsSeen.push('0x'+tag.toString(16));
       if (tag === 0x8825) {
         gpsIFDOffset = readUint32(entryOffset + 8);
-        break;
+        console.log('[EXIF] Found GPS IFD at offset:', gpsIFDOffset);
       }
     }
-    if (!gpsIFDOffset) return null;
+    console.log('[EXIF] IFD0 tags seen:', tagsSeen.join(', '));
 
-    // Parse GPS IFD
+    if (!gpsIFDOffset) { console.log('[EXIF] No GPS IFD found'); return null; }
+
     const gpsCount = readUint16(gpsIFDOffset);
+    console.log('[EXIF] GPS IFD entries:', gpsCount);
     const gpsData = {};
 
     for (let i = 0; i < gpsCount; i++) {
@@ -758,33 +762,54 @@ function parseGPSFromTIFF(view, tiffStart) {
       const tag = readUint16(entryOffset);
       const type = readUint16(entryOffset + 2);
       const count = readUint32(entryOffset + 4);
+      console.log('[EXIF] GPS tag:', '0x'+tag.toString(16), 'type:', type, 'count:', count);
 
       if (tag === 1 || tag === 3) {
-        // GPSLatitudeRef / GPSLongitudeRef — ASCII
         gpsData[tag] = String.fromCharCode(view.getUint8(tiffStart + entryOffset + 8));
+        console.log('[EXIF] Ref tag', tag, '=', gpsData[tag]);
       } else if (tag === 2 || tag === 4) {
-        // GPSLatitude / GPSLongitude — 3 rationals
+        // Value offset is relative to TIFF start
         const valOffset = readUint32(entryOffset + 8);
-        const deg = readUint32(valOffset) / readUint32(valOffset + 4);
-        const min = readUint32(valOffset + 8) / readUint32(valOffset + 12);
-        const sec = readUint32(valOffset + 16) / readUint32(valOffset + 20);
-        gpsData[tag] = deg + min / 60 + sec / 3600;
+        console.log('[EXIF] Rational valOffset:', valOffset, 'tiffStart:', tiffStart);
+        try {
+          const d_num = readUint32(valOffset);
+          const d_den = readUint32(valOffset + 4);
+          const m_num = readUint32(valOffset + 8);
+          const m_den = readUint32(valOffset + 12);
+          const s_num = readUint32(valOffset + 16);
+          const s_den = readUint32(valOffset + 20);
+          console.log('[EXIF] tag', tag, 'rationals:', d_num+'/'+d_den, m_num+'/'+m_den, s_num+'/'+s_den);
+          const deg = d_den ? d_num/d_den : 0;
+          const min = m_den ? m_num/m_den : 0;
+          const sec = s_den ? s_num/s_den : 0;
+          gpsData[tag] = deg + min/60 + sec/3600;
+          console.log('[EXIF] tag', tag, 'decimal:', gpsData[tag]);
+        } catch(re) { console.warn('[EXIF] Rational read error:', re); }
       }
     }
 
-    if (!gpsData[2] || !gpsData[4]) return null;
+    if (!gpsData[2] || !gpsData[4]) {
+      console.log('[EXIF] Missing lat or lng in gpsData:', gpsData);
+      return null;
+    }
 
     let lat = gpsData[2];
     let lng = gpsData[4];
     if (gpsData[1] === 'S') lat = -lat;
     if (gpsData[3] === 'W') lng = -lng;
 
-    // Sanity check
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      console.log('[EXIF] Out of range coords:', lat, lng);
+      return null;
+    }
     if (lat === 0 && lng === 0) return null;
 
+    console.log('[EXIF] ✅ Final GPS:', lat, lng);
     return { lat, lng };
-  } catch(e) { return null; }
+  } catch(e) {
+    console.error('[EXIF] parseGPSFromTIFF error:', e.message, e);
+    return null;
+  }
 }
 
 async function handlePhotos(event) {
