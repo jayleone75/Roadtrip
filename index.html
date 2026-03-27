@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Leone Family Adventure 🌵</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --sand: #F5EDD8; --rust: #C4622D; --canyon: #8B3A1F;
+    --sage: #6B8F71; --sky: #4A90A4; --dusk: #2C3E50;
+    --cream: #FAF6EE; --warm-gray: #8C7B6B; --gold: #D4A843;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--cream); font-family:'DM Sans',sans-serif; color:var(--dusk); min-height:100vh; }
+
+  /* TV MODE */
+  body.tv-mode .bottom-nav { display:none; }
+  body.tv-mode .hero h1 { font-size:3rem; }
+  body.tv-mode #trip-map { height:calc(100vh - 180px); }
+
+  /* HERO */
+  .hero { background:var(--dusk); background-image:radial-gradient(ellipse at 20% 50%,rgba(196,98,45,.3) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(74,144,164,.2) 0%,transparent 50%); padding:28px 20px 24px; text-align:center; position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; bottom:0; left:0; right:0; height:4px; background:linear-gradient(90deg,var(--rust),var(--gold),var(--sage),var(--sky)); }
+  .trip-emoji { font-size:2rem; display:block; margin-bottom:6px; }
+  .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(1.7rem,6vw,2.4rem); color:var(--sand); font-weight:900; line-height:1.1; }
+  .hero-sub { color:var(--warm-gray); font-size:.82rem; margin-top:5px; letter-spacing:.08em; text-transform:uppercase; font-weight:500; }
+
+  /* COUNTDOWN */
+  .countdown-bar { background:var(--rust); padding:12px 20px; display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; }
+  .countdown-label { color:rgba(255,255,255,.8); font-size:.78rem; text-transform:uppercase; letter-spacing:.1em; font-weight:500; }
+  .countdown-numbers { display:flex; gap:8px; align-items:center; }
+  .cnt-unit { text-align:center; }
+  .cnt-num { display:block; font-family:'DM Mono',monospace; font-size:1.4rem; color:#fff; font-weight:500; line-height:1; }
+  .cnt-lbl { display:block; font-size:.58rem; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.1em; margin-top:2px; }
+  .cnt-sep { color:rgba(255,255,255,.4); font-size:1.3rem; line-height:1; }
+
+  /* DEPART ALERT */
+  .depart-alert { background:linear-gradient(135deg,#fff8e7,#fff3d6); border-left:4px solid var(--gold); margin:14px; border-radius:10px; padding:13px 15px; display:flex; align-items:flex-start; gap:10px; }
+  .depart-alert .icon { font-size:1.3rem; flex-shrink:0; margin-top:2px; }
+  .depart-alert h3 { font-size:.88rem; font-weight:600; color:var(--canyon); margin-bottom:3px; }
+  .depart-alert p { font-size:.78rem; color:var(--warm-gray); line-height:1.4; }
+  .depart-time { font-family:'DM Mono',monospace; font-size:1.15rem; font-weight:500; color:var(--rust); }
+
+  /* TABS */
+  .tab-nav { display:flex; overflow-x:auto; padding:0 14px; gap:5px; margin-bottom:4px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .tab-nav::-webkit-scrollbar { display:none; }
+  .tab-btn { flex-shrink:0; padding:7px 13px; border-radius:20px; border:1.5px solid #ddd; background:#fff; font-family:'DM Sans',sans-serif; font-size:.76rem; font-weight:500; cursor:pointer; color:var(--warm-gray); transition:all .2s; white-space:nowrap; }
+  .tab-btn.active { background:var(--dusk); border-color:var(--dusk); color:#fff; }
+
+  /* CONTENT */
+  .content { padding:8px 14px 100px; }
+
+  /* DAY CARD */
+  .day-card { background:#fff; border-radius:16px; margin-bottom:14px; overflow:hidden; box-shadow:0 2px 12px rgba(44,62,80,.07); border:1px solid rgba(44,62,80,.06); display:none; }
+  .day-card.active { display:block; animation:fadeUp .3s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .day-header { padding:15px 17px 13px; border-bottom:1px solid rgba(44,62,80,.07); display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .day-num { font-family:'DM Mono',monospace; font-size:.68rem; color:var(--warm-gray); text-transform:uppercase; letter-spacing:.1em; display:block; margin-bottom:2px; }
+  .day-title { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; color:var(--dusk); line-height:1.2; }
+  .day-date { font-size:.76rem; color:var(--warm-gray); margin-top:2px; }
+  .day-badge { padding:4px 9px; border-radius:20px; font-size:.68rem; font-weight:600; letter-spacing:.05em; text-transform:uppercase; flex-shrink:0; }
+  .badge-drive { background:#EBF5FB; color:var(--sky); }
+  .badge-explore { background:#EAFAF1; color:var(--sage); }
+  .badge-home { background:#FDEDEC; color:var(--rust); }
+
+  /* DRIVE SUMMARY */
+  .drive-summary { background:linear-gradient(135deg,var(--dusk),#34495e); margin:0 17px 14px; border-radius:12px; padding:13px 15px; display:flex; gap:14px; }
+  .drive-stat { text-align:center; flex:1; }
+  .drive-stat-num { display:block; font-family:'DM Mono',monospace; font-size:1.15rem; color:var(--sand); font-weight:500; }
+  .drive-stat-lbl { display:block; font-size:.62rem; color:rgba(245,237,216,.6); text-transform:uppercase; letter-spacing:.1em; margin-top:2px; }
+
+  /* TODAY DEPART */
+  .today-depart { background:linear-gradient(135deg,#fff5f2,#fff0ea); border:2px solid var(--rust); border-radius:12px; padding:13px 15px; margin:0 17px 14px; display:flex; align-items:center; gap:10px; }
+  .today-depart .icon { font-size:1.5rem; }
+  .today-depart h4 { font-size:.86rem; color:var(--canyon); font-weight:700; }
+  .today-depart p { font-size:.76rem; color:var(--warm-gray); margin-top:2px; }
+
+  /* SCHEDULE */
+  .schedule { padding:0 17px 14px; }
+  .sched-item { display:flex; gap:12px; padding:11px 0; border-bottom:1px solid rgba(44,62,80,.05); }
+  .sched-item:last-child { border-bottom:none; }
+  .sched-time { font-family:'DM Mono',monospace; font-size:.72rem; color:var(--warm-gray); min-width:50px; padding-top:2px; flex-shrink:0; }
+  .sched-dot { width:9px; height:9px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+  .dot-depart{background:var(--rust)} .dot-stop{background:var(--gold)} .dot-arrive{background:var(--sage)} .dot-activity{background:var(--sky)} .dot-food{background:#E67E22} .dot-sleep{background:var(--dusk)}
+  .sched-content { flex:1; }
+  .sched-label { font-size:.8rem; font-weight:600; color:var(--dusk); display:block; margin-bottom:2px; }
+  .sched-detail { font-size:.74rem; color:var(--warm-gray); line-height:1.4; }
+  .sched-tag { display:inline-block; padding:2px 6px; border-radius:10px; font-size:.62rem; font-weight:600; margin-top:3px; margin-right:3px; text-transform:uppercase; letter-spacing:.05em; }
+  .tag-photo{background:#FEF5FB;color:#8E44AD} .tag-kids{background:#EBF5FB;color:var(--sky)} .tag-food{background:#FEF9E7;color:#D35400} .tag-must{background:#FDEDEC;color:var(--rust)}
+
+  /* HOTEL */
+  .hotel-block { background:var(--sand); margin:0 17px 14px; border-radius:12px; padding:13px 15px; display:flex; gap:10px; }
+  .hotel-icon { font-size:1.3rem; flex-shrink:0; }
+  .hotel-name { font-weight:600; font-size:.86rem; color:var(--dusk); display:block; margin-bottom:2px; }
+  .hotel-addr { font-size:.74rem; color:var(--warm-gray); display:block; margin-bottom:5px; }
+  .hotel-note { font-size:.73rem; color:var(--rust); font-weight:500; }
+
+  /* FOOD */
+  .food-section { padding:0 17px 14px; }
+  .section-label { font-size:.68rem; text-transform:uppercase; letter-spacing:.1em; color:var(--warm-gray); font-weight:600; margin-bottom:9px; display:flex; align-items:center; gap:6px; }
+  .section-label::after { content:''; flex:1; height:1px; background:rgba(44,62,80,.1); }
+  .food-item { display:flex; gap:9px; padding:7px 0; border-bottom:1px solid rgba(44,62,80,.05); }
+  .food-item:last-child { border-bottom:none; }
+  .food-emoji { font-size:1.05rem; flex-shrink:0; margin-top:1px; }
+  .food-name { font-weight:600; font-size:.8rem; color:var(--dusk); display:block; }
+  .food-desc { font-size:.72rem; color:var(--warm-gray); margin-top:2px; }
+
+  /* BOTTOM NAV */
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid rgba(44,62,80,.1); display:flex; z-index:100; padding-bottom:env(safe-area-inset-bottom); }
+  .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; padding:9px 4px 7px; border:none; background:none; cursor:pointer; color:var(--warm-gray); font-family:'DM Sans',sans-serif; font-size:.6rem; font-weight:500; gap:3px; transition:color .2s; }
+  .nav-btn.active { color:var(--rust); }
+  .nav-btn-icon { font-size:1.25rem; }
+
+  /* OVERVIEW */
+  .trip-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; padding:14px; }
+  .stat-card { background:#fff; border-radius:13px; padding:14px 10px; text-align:center; box-shadow:0 2px 8px rgba(44,62,80,.06); }
+  .stat-icon { font-size:1.3rem; display:block; margin-bottom:5px; }
+  .stat-num { font-family:'DM Mono',monospace; font-size:1.3rem; color:var(--rust); font-weight:500; display:block; }
+  .stat-lbl { font-size:.62rem; color:var(--warm-gray); text-transform:uppercase; letter-spacing:.08em; font-weight:600; margin-top:2px; display:block; }
+  .overview-text { background:#fff; margin:0 14px 14px; border-radius:13px; padding:15px; box-shadow:0 2px 8px rgba(44,62,80,.06); font-size:.8rem; color:var(--warm-gray); line-height:1.7; }
+  .overview-text strong { color:var(--dusk); }
+
+  /* CHECKLIST */
+  .check-group { margin-bottom:18px; }
+  .check-group-title { font-family:'Playfair Display',serif; font-size:.98rem; font-weight:700; color:var(--dusk); margin-bottom:9px; }
+  .check-item { display:flex; align-items:flex-start; gap:9px; padding:9px 13px; background:#fff; border-radius:10px; margin-bottom:5px; box-shadow:0 1px 4px rgba(44,62,80,.06); cursor:pointer; transition:all .2s; }
+  .check-item.checked { opacity:.5; }
+  .check-item.checked .check-box { background:var(--sage); border-color:var(--sage); }
+  .check-box { width:19px; height:19px; border-radius:5px; border:2px solid #ddd; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.68rem; color:#fff; margin-top:1px; transition:all .2s; }
+  .check-text { flex:1; }
+  .check-main { font-size:.8rem; font-weight:600; color:var(--dusk); display:block; }
+  .check-sub { font-size:.71rem; color:var(--warm-gray); margin-top:1px; }
+  .urgent-tag { background:#FDEDEC; color:var(--rust); font-size:.6rem; padding:2px 5px; border-radius:8px; font-weight:700; text-transform:uppercase; flex-shrink:0; align-self:center; }
+
+  /* PHOTOS */
+  .photo-upload-zone { border:2px dashed var(--rust); border-radius:14px; padding:28px 18px; text-align:center; background:rgba(196,98,45,.04); margin-bottom:14px; cursor:pointer; transition:all .2s; }
+  .photo-upload-zone:hover { background:rgba(196,98,45,.08); }
+  .upload-icon { font-size:1.8rem; display:block; margin-bottom:7px; }
+  .upload-text { font-size:.85rem; font-weight:600; color:var(--rust); display:block; margin-bottom:3px; }
+  .upload-sub { font-size:.73rem; color:var(--warm-gray); }
+  .photo-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:9px; }
+  .photo-item { border-radius:11px; overflow:hidden; aspect-ratio:1; position:relative; background:var(--sand); }
+  .photo-item img { width:100%; height:100%; object-fit:cover; }
+  .photo-caption { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(0,0,0,.6)); color:#fff; font-size:.68rem; padding:14px 7px 7px; font-weight:500; }
+  .empty-photos { text-align:center; padding:28px; color:var(--warm-gray); font-size:.83rem; }
+  .loading-photos { text-align:center; padding:28px; color:var(--warm-gray); font-size:.83rem; }
+
+  /* NOTICES */
+  .sync-notice { background:linear-gradient(135deg,#eaf7ee,#d5f0de); border-radius:12px; padding:13px 15px; margin-bottom:14px; display:flex; gap:9px; align-items:flex-start; }
+  .sync-notice .icon { font-size:1.2rem; flex-shrink:0; }
+  .sync-notice p { font-size:.76rem; color:#2D6A4F; line-height:1.5; }
+  .sync-notice strong { display:block; margin-bottom:2px; font-size:.8rem; }
+
+  /* MAP */
+  #trip-map { width:100%; height:340px; border-radius:14px; overflow:hidden; margin-bottom:14px; }
+  .map-status { padding:10px 14px; background:#fff; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; gap:9px; box-shadow:0 1px 6px rgba(44,62,80,.08); }
+  .status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .status-dot.active { background:#27AE60; animation:pulse 2s infinite; }
+  .status-dot.inactive { background:#ccc; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .status-text { font-size:.8rem; color:var(--dusk); font-weight:500; flex:1; }
+  .status-time { font-size:.7rem; color:var(--warm-gray); }
+  .map-share-btn { width:100%; padding:13px; background:var(--rust); color:#fff; border:none; border-radius:11px; font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:600; cursor:pointer; margin-bottom:10px; transition:all .2s; }
+  .map-share-btn.sharing { background:var(--sage); }
+  .tv-link-box { background:var(--sand); border-radius:12px; padding:13px 15px; margin-bottom:12px; }
+  .tv-link-label { font-size:.72rem; font-weight:600; color:var(--warm-gray); text-transform:uppercase; letter-spacing:.08em; display:block; margin-bottom:6px; }
+  .tv-link { font-family:'DM Mono',monospace; font-size:.78rem; color:var(--rust); word-break:break-all; display:block; margin-bottom:8px; }
+  .tv-copy-btn { padding:8px 14px; background:var(--dusk); color:#fff; border:none; border-radius:8px; font-size:.78rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
+
+  /* TV OVERLAY */
+  .tv-overlay { display:none; position:fixed; top:20px; left:20px; right:20px; z-index:1000; pointer-events:none; }
+  body.tv-mode .tv-overlay { display:flex; }
+  .tv-header { background:rgba(10,15,26,.85); backdrop-filter:blur(8px); border-radius:16px; padding:20px 28px; display:flex; justify-content:space-between; align-items:center; width:100%; }
+  .tv-title { font-family:'Playfair Display',serif; font-size:1.8rem; color:var(--sand); font-weight:900; }
+  .tv-location { font-size:1rem; color:#fff; font-weight:600; text-align:right; }
+  .tv-updated { font-size:.78rem; color:rgba(255,255,255,.5); margin-top:3px; }
+
+  /* UPLOAD PROGRESS */
+  .upload-progress { background:#fff; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:none; box-shadow:0 1px 6px rgba(44,62,80,.08); }
+  .progress-bar-wrap { background:#f0f0f0; border-radius:10px; height:6px; margin-top:8px; overflow:hidden; }
+  .progress-bar { background:var(--rust); height:100%; border-radius:10px; transition:width .3s; width:0%; }
+  .progress-text { font-size:.76rem; color:var(--warm-gray); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <span class="trip-emoji">🌵</span>
+  <h1>Leone Family Adventure</h1>
+  <p class="hero-sub">March 30 – April 6, 2025 &nbsp;·&nbsp; 5 Explorers</p>
+</div>
+
+<div class="countdown-bar">
+  <span class="countdown-label">Trip starts in</span>
+  <div class="countdown-numbers">
+    <div class="cnt-unit"><span class="cnt-num" id="cnt-d">--</span><span class="cnt-lbl">days</span></div>
+    <span class="cnt-sep">:</span>
+    <div class="cnt-unit"><span class="cnt-num" id="cnt-h">--</span><span class="cnt-lbl">hrs</span></div>
+    <span class="cnt-sep">:</span>
+    <div class="cnt-unit"><span class="cnt-num" id="cnt-m">--</span><span class="cnt-lbl">min</span></div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="showSection('schedule')" id="nav-schedule"><span class="nav-btn-icon">📅</span>Schedule</button>
+  <button class="nav-btn" onclick="showSection('map')" id="nav-map"><span class="nav-btn-icon">📍</span>Live Map</button>
+  <button class="nav-btn" onclick="showSection('overview')" id="nav-overview"><span class="nav-btn-icon">🗺️</span>Overview</button>
+  <button class="nav-btn" onclick="showSection('checklist')" id="nav-checklist"><span class="nav-btn-icon">✅</span>Checklist</button>
+  <button class="nav-btn" onclick="showSection('photos')" id="nav-photos"><span class="nav-btn-icon">📸</span>Photos</button>
+</div>
+
+<!-- ===== SCHEDULE ===== -->
+<div id="section-schedule">
+  <div class="depart-alert" id="depart-alert" style="display:none">
+    <div class="icon">⏰</div>
+    <div>
+      <h3>Today's Target Departure</h3>
+      <div class="depart-time" id="depart-time-display">7:00 AM</div>
+      <p id="depart-detail"></p>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showDay(0)">All Days</button>
+    <button class="tab-btn" onclick="showDay(1)">Day 1</button>
+    <button class="tab-btn" onclick="showDay(2)">Day 2</button>
+    <button class="tab-btn" onclick="showDay(3)">Day 3</button>
+    <button class="tab-btn" onclick="showDay(4)">Day 4</button>
+    <button class="tab-btn" onclick="showDay(5)">Day 5</button>
+    <button class="tab-btn" onclick="showDay(6)">Day 6</button>
+    <button class="tab-btn" onclick="showDay(7)">Day 7</button>
+    <button class="tab-btn" onclick="showDay(8)">Day 8</button>
+  </div>
+  <div class="content">
+
+    <!-- DAY 1 -->
+    <div class="day-card active" data-day="1">
+      <div class="day-header"><div class="day-meta"><span class="day-num">Day 1 of 8</span><div class="day-title">Sacramento → Paso Robles</div><div class="day-date">Saturday, March 30</div></div><span class="day-badge badge-drive">Drive Day</span></div>
+      <div class="today-depart"><div class="icon">🚐</div><div><h4>Leave by 7:00 AM</h4><p>Arrive Paso Robles ~12:30 PM</p></div></div>
+      <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">290</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">4.5h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~1 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
+      <div class="schedule">
+        <div class="sched-item"><span class="sched-time">7:00 AM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart Sacramento</span><span class="sched-detail">Tank full, snacks loaded. South on I-5.</span></div></div>
+        <div class="sched-item"><span class="sched-time">9:30 AM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">⛽ Gas + Break — Coalinga</span><span class="sched-detail">Harris Ranch area. Good restrooms, fast food nearby.</span><span class="sched-tag tag-kids">kid stop</span></div></div>
+        <div class="sched-item"><span class="sched-time">11:30 AM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">📸 Cuesta Grade Vista Point</span><span class="sched-detail">Just north of SLO on Hwy 101. Rolling hills panorama — 10 min stop.</span><span class="sched-tag tag-photo">photo op</span></div></div>
+        <div class="sched-item"><span class="sched-time">12:30 PM</span><div class="sched-dot dot-arrive"></div><div class="sched-content"><span class="sched-label">🏨 Arrive Allegretto Vineyard Resort</span><span class="sched-detail">Beautiful grounds, kids can roam. Downtown Paso City Park has a splash pad.</span><span class="sched-tag tag-kids">explore</span></div></div>
+        <div class="sched-item"><span class="sched-time">6:30 PM</span><div class="sched-dot dot-food"></div><div class="sched-content"><span class="sched-label">🍽️ Dinner — Early Night</span><span class="sched-detail">Longest drive of the trip is tomorrow. Eat and rest.</span></div></div>
+      </div>
+      <div class="hotel-block"><div class="hotel-icon">🏨</div><div><span class="hotel-name">Allegretto Vineyard Resort</span><span class="hotel-addr">2700 Buena Vista Dr, Paso Robles, CA 93446</span><span class="hotel-note">✅ Booked</span></div></div>
+      <div class="food-section"><div class="section-label">Dinner options</div>
+        <div class="food-item"><div class="food-emoji">🍕</div><div><span class="food-name">Allegretto Restaurant (on-site)</span><span class="food-desc">No driving — Mediterranean, kid-friendly. Easy win.</span></div></div>
+        <div class="food-item"><div class="food-emoji">🌮</div><div><span class="food-name">Taqueria Santa Cruz</span><span class="food-desc">Budget-friendly, fast, delicious for 5.</span></div></div>
+        <div class="food-item"><div class="food-emoji">🍔</div><div><span class="food-name">Thomas Hill Organics</span><span class="food-desc">10 min drive. Farm-to-table, relaxed, kids menu.</span></div></div>
+      </div>
+    </div>
+
+    <!-- DAY 2 -->
+    <div class="day-card" data-day="2">
+      <div class="day-header"><div class="day-meta"><span class="day-num">Day 2 of 8</span><div class="day-title">Paso Robles → Sedona</div><div class="day-date">Sunday, March 31 — Longest Drive</div></div><span class="day-badge badge-drive">Long Drive</span></div>
+      <div class="today-depart"><div class="icon">⚠️</div><div><h4>Leave by 6:30 AM — No Exceptions</h4><p>9–9.5 hrs total. Early start = red rock sunset arrival.</p></div></div>
+      <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">590</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">~9h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~4 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
+      <div class="schedule">
+        <div class="sched-item"><span class="sched-time">6:30 AM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart Paso Robles</span><span class="sched-detail">US-101 S → CA-46 E → I-40 E. Grab drive-thru breakfast.</span></div></div>
+        <div class="sched-item"><span class="sched-time">9:00 AM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">⛽ Gas — Barstow, CA</span><span class="sched-detail">Fill up here — good services before long desert stretch.</span><span class="sched-tag tag-kids">kid stop</span></div></div>
+        <div class="sched-item"><span class="sched-time">10:30 AM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">📸 Mojave Desert Pulloff</span><span class="sched-detail">Near Ludlow on I-40. Alien landscape — kids love it. 10 min.</span><span class="sched-tag tag-photo">photo op</span></div></div>
+        <div class="sched-item"><span class="sched-time">12:30 PM</span><div class="sched-dot dot-food"></div><div class="sched-content"><span class="sched-label">🍔 Lunch — Kingman, AZ</span><span class="sched-detail">Cracker Barrel or Denny's off I-40. 30 min max.</span><span class="sched-tag tag-food">lunch</span></div></div>
+        <div class="sched-item"><span class="sched-time">4:00 PM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">📸 Airport Mesa Overlook</span><span class="sched-detail">First red rock view entering Sedona on AZ-89A. Pull over — jaw-dropping. 15 min.</span><span class="sched-tag tag-photo">wow moment</span><span class="sched-tag tag-must">iconic</span></div></div>
+        <div class="sched-item"><span class="sched-time">4:30 PM</span><div class="sched-dot dot-arrive"></div><div class="sched-content"><span class="sched-label">🏨 Check In — Courtyard Sedona</span><span class="sched-detail">Pool is open. Let the kids decompress.</span></div></div>
+        <div class="sched-item"><span class="sched-time">7:00 PM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">🌅 Sunset — Cathedral Rock Overlook</span><span class="sched-detail">10 min from hotel. Best sunset in Sedona. No hike — just park and watch.</span><span class="sched-tag tag-photo">golden hour</span></div></div>
+      </div>
+      <div class="hotel-block"><div class="hotel-icon">🏨</div><div><span class="hotel-name">Courtyard by Marriott Sedona</span><span class="hotel-addr">4105 W State Route 89A, Sedona, AZ 86336</span><span class="hotel-note">✅ Booked</span></div></div>
+      <div class="food-section"><div class="section-label">Dinner</div>
+        <div class="food-item"><div class="food-emoji">🌮</div><div><span class="food-name">Elote Cafe</span><span class="food-desc">Best Mexican in Sedona. Short wait, worth it.</span></div></div>
+        <div class="food-item"><div class="food-emoji">🍕</div><div><span class="food-name">Pizza Pazza</span><span class="food-desc">Casual, fast, kids love it. Easy after a 9-hour drive.</span></div></div>
+      </div>
+    </div>
+
+    <!-- DAY 3 -->
+    <div class="day-card" data-day="3">
+      <div class="day-header"><div class="day-meta"><span class="day-num">Day 3 of 8</span><div class="day-title">Sedona Morning → Buckeye</div><div class="day-date">Monday, April 1 — Easy Day</div></div><span class="day-badge badge-explore">Short Drive</span></div>
+      <div class="today-depart"><div class="icon">🌄</div><div><h4>Leave by 11:00 AM</h4><p>Only 2 hrs to Buckeye — enjoy Sedona morning first!</p></div></div>
+      <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">115</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">~2h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~1 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
+      <div class="schedule">
+        <div class="sched-item"><span class="sched-time">7:30 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">☕ Breakfast + Morning Light</span><span class="sched-detail">Morning in Sedona is magical — warm red rock glow.</span><span class="sched-tag tag-photo">golden hour</span></div></div>
+        <div class="sched-item"><span class="sched-time">8:30 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🥾 Bell Rock Trail</span><span class="sched-detail">15 min from hotel. Flat paved path, massive red rocks. All 3 kids. 45 min round trip.</span><span class="sched-tag tag-kids">all ages</span><span class="sched-tag tag-photo">photo op</span></div></div>
+        <div class="sched-item"><span class="sched-time">11:00 AM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart for Buckeye</span><span class="sched-detail">AZ-89A → I-17 S → I-10 W. Smooth easy drive.</span></div></div>
+        <div class="sched-item"><span class="sched-time">1:00 PM</span><div class="sched-dot dot-arrive"></div><div class="sched-content"><span class="sched-label">🏠 Arrive Buckeye — Friends!</span><span class="sched-detail">Pool, chill, laundry, grocery reset. Kids go wild.</span><span class="sched-tag tag-kids">rest day</span></div></div>
+      </div>
+      <div class="hotel-block"><div class="hotel-icon">🏠</div><div><span class="hotel-name">Friends' Home — Buckeye, AZ</span><span class="hotel-addr">Buckeye, Arizona</span><span class="hotel-note">✅ Confirmed with friends</span></div></div>
+    </div>
+
+    <!-- DAY 4 -->
+    <div class="day-card" data-day="4">
+      <div class="day-header"><div class="day-meta"><span class="day-num">Day 4 of 8</span><div class="day-title">Buckeye → Grand Canyon</div><div class="day-date">Tuesday, April 2</div></div><span class="day-badge badge-drive">Drive Day</span></div>
+      <div class="today-depart"><div class="icon">🏔️</div><div><h4>Leave by 9:00 AM</h4><p>Arrive Grand Canyon ~1 PM — full afternoon on the rim</p></div></div>
+      <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">230</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">3.5h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~1 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
+      <div class="schedule">
+        <div class="sched-item"><span class="sched-time">9:00 AM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart Buckeye</span><span class="sched-detail">I-10 E → AZ-89 N → AZ-64 N into the park.</span></div></div>
+        <div class="sched-item"><span class="sched-time">10:30 AM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">⛽ Williams, AZ</span><span class="sched-detail">Last full-service town before park. Fill up, grab lunch supplies.</span></div></div>
+        <div class="sched-item"><span class="sched-time">12:30 PM</span><div class="sched-dot dot-arrive"></div><div class="sched-content"><span class="sched-label">🎟️ Park Entrance — Show 4th Grade Pass</span><span class="sched-detail">Printed paper voucher — South Entrance on AZ-64.</span><span class="sched-tag tag-must">print pass!</span></div></div>
+        <div class="sched-item"><span class="sched-time">1:30 PM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">😮 Mather Point — First Look</span><span class="sched-detail">The wow moment. 30–45 min. Watch the kids' faces.</span><span class="sched-tag tag-photo">iconic</span><span class="sched-tag tag-must">must-see</span></div></div>
+        <div class="sched-item"><span class="sched-time">3:00 PM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🥾 Rim Trail</span><span class="sched-detail">Paved, flat, stroller-friendly. East toward Yavapai Point. 1–2 miles.</span><span class="sched-tag tag-kids">all ages</span></div></div>
+        <div class="sched-item"><span class="sched-time">5:00 PM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🎖️ Junior Ranger Program</span><span class="sched-detail">Visitor Center — booklets, activities, badges. Perfect for ages 7–11.</span><span class="sched-tag tag-kids">badge!</span></div></div>
+        <div class="sched-item"><span class="sched-time">7:15 PM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">🌅 Sunset — Hopi Point</span><span class="sched-detail">Best sunset overlook. Free park shuttle. Arrive 20 min early.</span><span class="sched-tag tag-photo">golden hour</span></div></div>
+      </div>
+      <div class="hotel-block"><div class="hotel-icon">🏕️</div><div><span class="hotel-name">Yavapai Lodge</span><span class="hotel-addr">Inside Grand Canyon National Park, South Rim</span><span class="hotel-note">✅ Booked · Inside the park</span></div></div>
+      <div class="food-section"><div class="section-label">Dining</div>
+        <div class="food-item"><div class="food-emoji">🍽️</div><div><span class="food-name">Yavapai Tavern (on-site)</span><span class="food-desc">Casual grill inside the lodge. Kids menu. Easiest option.</span></div></div>
+        <div class="food-item"><div class="food-emoji">🥪</div><div><span class="food-name">Canyon Village Market & Deli</span><span class="food-desc">Grab sandwiches, eat outside with canyon views.</span></div></div>
+      </div>
+    </div>
+
+    <!-- DAY 5 -->
+    <div class="day-card" data-day="5">
+      <div class="day-header"><div class="day-meta"><span class="day-num">Day 5 of 8</span><div class="day-title">Grand Canyon → Zion</div><div class="day-date">Wednesday, April 3</div></div><span class="day-badge badge-drive">Drive Day</span></div>
+      <div class="today-depart"><div class="icon">🌅</div><div><h4>Morning at rim, leave by 10:00 AM</h4><p>5 hrs to Zion — optional sunrise first</p></div></div>
+      <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">175</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">~5h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~3 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
+      <div class="schedule">
+        <div class="sched-item"><span class="sched-time">6:15 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🌄 Optional Sunrise — Mather Point</span><span class="sched-detail">Totally different light than yesterday. 15 min walk from lodge.</span><span class="sched-tag tag-photo">sunrise</span></div></div>
+        <div class="sched-item"><span class="sched-time">8:00 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🗼 Desert View Watchtower</span><span class="sched-detail">25 min east. Historic 1932 tower, panoramic views. Kids climb inside.</span><span class="sched-tag tag-kids">climb!</span><span class="sched-tag tag-photo">photo op</span></div></div>
+        <div class="sched-item"><span class="sched-time">10:00 AM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart for Zion</span><span class="sched-detail">AZ-64 N → US-89 N → UT-9 W. Road into Zion canyon is stunning.</span></div></div>
+        <div class="sched-item"><span class="sched-time">12:30 PM</span><div class="sched-dot dot-food"></div><div class="sched-content"><span class="sched-label">🥪 Lunch — Kanab, UT</span><span class="sched-detail">Cute halfway town. Sego restaurant or Willow Canyon Outdoor.</span><span class="sched-tag tag-food">lunch</span></div></div>
+        <div class="sched-item"><span class="sched-time">1:15 PM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">📸 Zion East Entrance — Tunnel View</span><span class="sched-detail">Stop before the mile-long tunnel. Spectacular views east of Zion.</span><span class="sched-tag tag-photo">must-see</span></div></div>
+        <div class="sched-item"><span class="sched-time">3:00 PM</span><div class="sched-dot dot-arrive"></div><div class="sched-content"><span class="sched-label">🏨 Check In — SpringHill Suites Springdale</span><span class="sched-detail">Shuttle stop nearby. No car needed in Springdale.</span></div></div>
+        <div class="sched-item"><span class="sched-time">4:30 PM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🌿 Virgin River Walk</span><span class="sched-detail">Shuttle to Zion Lodge. River rocks, flat path, kids love it.</span><span class="sched-tag tag-kids">river play</span><span class="sched-tag tag-photo">photo op</span></div></div>
+      </div>
+      <div class="hotel-block"><div class="hotel-icon">🏨</div><div><span class="hotel-name">SpringHill Suites Springdale Zion</span><span class="hotel-addr">1141 Canyon Springs Rd, Springdale, UT 84767</span><span class="hotel-note">✅ Booked · Shuttle nearby</span></div></div>
+      <div class="food-section"><div class="section-label">Dinner</div>
+        <div class="food-item"><div class="food-emoji">🍕</div><div><span class="food-name">OSO Restaurant</span><span class="food-desc">Best casual in Springdale. Flatbread, outdoor canyon views.</span></div></div>
+        <div class="food-item"><div class="food-emoji">🍔</div><div><span class="food-name">Zion Pizza & Noodle</span><span class="food-desc">In an old church. Classic Springdale family spot.</span></div></div>
+      </div>
+    </div>
+
+    <!-- DAY 6 -->
+    <div class="day-card" data-day="6">
+      <div class="day-header"><div class="day-meta"><span class="day-num">Day 6 of 8</span><div class="day-title">Zion + Scenic Byway 12 → Capitol Reef</div><div class="day-date">Thursday, April 4</div></div><span class="day-badge badge-explore">Scenic Day</span></div>
+      <div class="today-depart"><div class="icon">🚌</div><div><h4>Shuttle at 7:00 AM, leave hotel by noon</h4><p>Morning in Zion, afternoon on the best drive in America</p></div></div>
+      <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">155</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">4.5h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~5 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
+      <div class="schedule">
+        <div class="sched-item"><span class="sched-time">7:00 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🚌 Early Shuttle into Zion Canyon</span><span class="sched-detail">Fewer crowds. Ride to Temple of Sinawava (last stop).</span></div></div>
+        <div class="sched-item"><span class="sched-time">8:00 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">💧 The Narrows — Partial Walk</span><span class="sched-detail">Wade where water begins. The entrance alone is stunning.</span><span class="sched-tag tag-kids">water play</span><span class="sched-tag tag-photo">iconic</span></div></div>
+        <div class="sched-item"><span class="sched-time">9:30 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🥾 Riverside Walk</span><span class="sched-detail">Flat 2-mile walk along the river. Perfect for the 7-year-old.</span><span class="sched-tag tag-kids">all ages</span></div></div>
+        <div class="sched-item"><span class="sched-time">12:00 PM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart — Scenic Byway 12</span><span class="sched-detail">UT-9 E → US-89 N → UT-12 E. One of the most scenic drives in America.</span><span class="sched-tag tag-photo">best drive</span></div></div>
+        <div class="sched-item"><span class="sched-time">1:30 PM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">📸 Red Canyon — Pink Cliffs</span><span class="sched-detail">UT-12 west of Bryce. Pink hoodoos. 15 min stop.</span><span class="sched-tag tag-photo">must-see</span></div></div>
+        <div class="sched-item"><span class="sched-time">2:30 PM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">📸 Hogback Ridge</span><span class="sched-detail">Narrow ridgeline with canyon drops on both sides. Kids will flip out.</span><span class="sched-tag tag-photo">wild view</span><span class="sched-tag tag-kids">mind-blowing</span></div></div>
+        <div class="sched-item"><span class="sched-time">4:30 PM</span><div class="sched-dot dot-arrive"></div><div class="sched-content"><span class="sched-label">🏨 Arrive Capitol Reef Resort, Torrey</span><span class="sched-detail">Walk the Fruita orchards before dinner.</span></div></div>
+      </div>
+      <div class="hotel-block"><div class="hotel-icon">🏜️</div><div><span class="hotel-name">Capitol Reef Resort</span><span class="hotel-addr">2600 E. Hwy 24, Torrey, UT 84775</span><span class="hotel-note">✅ Booked · Canyon views</span></div></div>
+      <div class="food-section"><div class="section-label">Dinner in Torrey</div>
+        <div class="food-item"><div class="food-emoji">🥩</div><div><span class="food-name">Broken Spur Steakhouse</span><span class="food-desc">Classic Western cowboy vibe. Kids love it. Great portions.</span></div></div>
+        <div class="food-item"><div class="food-emoji">🌮</div><div><span class="food-name">Rim Rock Restaurant</span><span class="food-desc">On Capitol Reef Resort property. Scenic and convenient.</span></div></div>
+      </div>
+    </div>
+
+    <!-- DAY 7 -->
+    <div class="day-card" data-day="7">
+      <div class="day-header"><div class="day-meta"><span class="day-num">Day 7 of 8</span><div class="day-title">Capitol Reef → Pismo Beach</div><div class="day-date">Friday, April 5 — Long Return</div></div><span class="day-badge badge-drive">Long Drive</span></div>
+      <div class="today-depart"><div class="icon">⚠️</div><div><h4>Leave by 7:00 AM</h4><p>9+ hrs to Pismo. Early start = beach sunset.</p></div></div>
+      <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">580</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">~9h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~5 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
+      <div class="schedule">
+        <div class="sched-item"><span class="sched-time">6:30 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🍑 Fruita Orchards Sunrise Walk</span><span class="sched-detail">5 min from hotel. Sunrise through cottonwoods. 20 min, magical.</span><span class="sched-tag tag-photo">sunrise</span></div></div>
+        <div class="sched-item"><span class="sched-time">7:00 AM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart Capitol Reef</span><span class="sched-detail">Hwy 24 W → I-70 W → US-6 → I-15 S → CA-58 W → US-101 N.</span></div></div>
+        <div class="sched-item"><span class="sched-time">10:00 AM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">⛽ Gas — Green River, UT</span><span class="sched-detail">Last good service before Nevada. Fill up.</span></div></div>
+        <div class="sched-item"><span class="sched-time">12:30 PM</span><div class="sched-dot dot-food"></div><div class="sched-content"><span class="sched-label">🍔 Lunch — Henderson/Boulder City, NV</span><span class="sched-detail">In-N-Out off I-15. Fast, cheap, kids love it. No Strip needed.</span><span class="sched-tag tag-food">no strip!</span></div></div>
+        <div class="sched-item"><span class="sched-time">2:30 PM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">📸 Mojave Wind Turbines — Tehachapi</span><span class="sched-detail">Thousands of turbines on CA-58 hillsides. Kids think alien planet.</span><span class="sched-tag tag-kids">kids love this</span><span class="sched-tag tag-photo">photo op</span></div></div>
+        <div class="sched-item"><span class="sched-time">5:00 PM</span><div class="sched-dot dot-arrive"></div><div class="sched-content"><span class="sched-label">🌊 Arrive Pismo Beach</span><span class="sched-detail">Check in, shoes off, walk to the water. You made it.</span><span class="sched-tag tag-kids">beach!</span></div></div>
+        <div class="sched-item"><span class="sched-time">7:00 PM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">🌅 Sunset — Pismo Pier</span><span class="sched-detail">2 min walk from Sandcastle Hotel. Best way to end 7 days.</span><span class="sched-tag tag-photo">trip finale</span></div></div>
+      </div>
+      <div class="hotel-block"><div class="hotel-icon">🏖️</div><div><span class="hotel-name">Sandcastle Hotel on the Beach</span><span class="hotel-addr">100 Stimson Ave, Pismo Beach, CA 93449</span><span class="hotel-note">✅ Booked · Beachfront</span></div></div>
+      <div class="food-section"><div class="section-label">Dinner</div>
+        <div class="food-item"><div class="food-emoji">🦀</div><div><span class="food-name">Splash Café</span><span class="food-desc">Famous clam chowder bread bowl. 5 min walk. This is the move.</span></div></div>
+        <div class="food-item"><div class="food-emoji">🍕</div><div><span class="food-name">Giuseppe's Cucina Italiana</span><span class="food-desc">Walkable Italian. Great family final night dinner.</span></div></div>
+      </div>
+    </div>
+
+    <!-- DAY 8 -->
+    <div class="day-card" data-day="8">
+      <div class="day-header"><div class="day-meta"><span class="day-num">Day 8 of 8</span><div class="day-title">Pismo Beach → Home 🎉</div><div class="day-date">Saturday, April 6</div></div><span class="day-badge badge-home">Home Day</span></div>
+      <div class="today-depart"><div class="icon">🏠</div><div><h4>Leave by 9:00 AM</h4><p>Home by 3 PM — easy final stretch</p></div></div>
+      <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">220</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">5.5h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~3 PM</span><span class="drive-stat-lbl">home!</span></div></div>
+      <div class="schedule">
+        <div class="sched-item"><span class="sched-time">7:30 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🌊 Morning Beach Walk</span><span class="sched-detail">Kids collect shells. Leone family photo. Last Pacific moment.</span><span class="sched-tag tag-photo">final shot</span></div></div>
+        <div class="sched-item"><span class="sched-time">8:30 AM</span><div class="sched-dot dot-food"></div><div class="sched-content"><span class="sched-label">☕ Old West Cinnamon Rolls</span><span class="sched-detail">Price St, Pismo Beach. Legendary. Open early. Don't skip.</span></div></div>
+        <div class="sched-item"><span class="sched-time">9:00 AM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart for Sacramento</span><span class="sched-detail">US-101 N → CA-46 E → CA-99 N → I-5 N.</span></div></div>
+        <div class="sched-item"><span class="sched-time">11:30 AM</span><div class="sched-dot dot-stop"></div><div class="sched-content"><span class="sched-label">⛽ Gas — Coalinga / Harris Ranch</span><span class="sched-detail">One quick stop. Lunch if needed.</span></div></div>
+        <div class="sched-item"><span class="sched-time">3:00 PM</span><div class="sched-dot dot-arrive"></div><div class="sched-content"><span class="sched-label">🏠 Home — Sacramento</span><span class="sched-detail">8 days · 5 states · 3 national parks · 1 epic Leone family trip 🎉</span><span class="sched-tag tag-must">you did it!</span></div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== LIVE MAP ===== -->
+<div id="section-map" style="display:none; padding:14px 14px 100px;">
+  <div class="sync-notice"><div class="icon">🛰️</div><p><strong>Live GPS — synced across all devices</strong>Tap Start Sharing — your location saves to the cloud every 30 seconds. Your wife's phone and the TV all see the same live dot automatically.</p></div>
+  <div class="map-status" id="map-status">
+    <div class="status-dot inactive" id="status-dot"></div>
+    <span class="status-text" id="status-text">Not sharing location</span>
+    <span class="status-time" id="status-time"></span>
+  </div>
+  <button class="map-share-btn" id="share-btn" onclick="toggleSharing()">📍 Start Sharing My Location</button>
+  <div class="tv-link-box">
+    <span class="tv-link-label">📺 TV / Big Screen Link</span>
+    <span class="tv-link" id="tv-url">roadtrip.jleone.ai?tv=1</span>
+    <button class="tv-copy-btn" onclick="copyTvLink()">Copy Link</button>
+  </div>
+  <div id="trip-map"></div>
+  <div style="background:#fff;border-radius:12px;padding:14px;font-size:.78rem;color:var(--warm-gray);line-height:1.6;box-shadow:0 2px 8px rgba(44,62,80,.06);margin-top:12px;">
+    <strong style="color:var(--dusk);display:block;margin-bottom:4px;">How it works</strong>
+    Tap Start Sharing → browser asks for location permission once → updates every 30 seconds.<br>
+    TV at <strong>roadtrip.jleone.ai?tv=1</strong> shows fullscreen map — kids watch the van move in real time.<br>
+    Both phones can share or just view — no account needed.
+  </div>
+</div>
+
+<!-- ===== OVERVIEW ===== -->
+<div id="section-overview" style="display:none; padding-bottom:100px;">
+  <div class="trip-stats">
+    <div class="stat-card"><span class="stat-icon">📍</span><span class="stat-num">8</span><span class="stat-lbl">Days</span></div>
+    <div class="stat-card"><span class="stat-icon">🏨</span><span class="stat-num">7</span><span class="stat-lbl">Hotels</span></div>
+    <div class="stat-card"><span class="stat-icon">🌲</span><span class="stat-num">3</span><span class="stat-lbl">Parks</span></div>
+    <div class="stat-card"><span class="stat-icon">🚐</span><span class="stat-num">~2100</span><span class="stat-lbl">Miles</span></div>
+    <div class="stat-card"><span class="stat-icon">👨‍👩‍👧‍👦</span><span class="stat-num">5</span><span class="stat-lbl">Leones</span></div>
+    <div class="stat-card"><span class="stat-icon">🎖️</span><span class="stat-num">3</span><span class="stat-lbl">Badges</span></div>
+  </div>
+  <div class="overview-text">
+    <strong>The Leone Family Arc</strong><br><br>
+    Clockwise loop — wine country → Arizona red rock → Grand Canyon → Utah canyons → Pacific Ocean finish.<br><br>
+    <strong>Mar 30 — Paso Robles</strong> · Allegretto Resort, easy warm-up night.<br>
+    <strong>Mar 31 — Sedona</strong> · Longest drive, red rock sunset makes every mile worth it.<br>
+    <strong>Apr 1 — Buckeye</strong> · Sedona morning hike, then pool with friends.<br>
+    <strong>Apr 2 — Grand Canyon</strong> · Inside the park at Yavapai. Junior Ranger badges. Hopi Point sunset.<br>
+    <strong>Apr 3 — Zion</strong> · Tunnel entry, river walk, Narrows intro.<br>
+    <strong>Apr 4 — Capitol Reef via Byway 12</strong> · Red Canyon, Hogback Ridge, Capitol Reef orchards.<br>
+    <strong>Apr 5 — Pismo Beach</strong> · Long return rewarded by beach sunset. You earned it.<br>
+    <strong>Apr 6 — Home</strong> · Cinnamon rolls, final beach walk, Sacramento by 3 PM.
+  </div>
+  <div style="padding:0 14px 14px;">
+    <div style="background:#fff;border-radius:13px;padding:15px;box-shadow:0 2px 8px rgba(44,62,80,.06);">
+      <div class="section-label" style="margin-bottom:10px;">Google Maps Routes</div>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <a href="https://www.google.com/maps/dir/?api=1&origin=Sacramento,+CA&destination=Capitol+Reef+National+Park&waypoints=Paso+Robles,+CA|Sedona,+AZ|Buckeye,+AZ|Grand+Canyon+South+Rim|Zion+National+Park&travelmode=driving" target="_blank" style="display:block;background:var(--rust);color:#fff;text-align:center;padding:12px;border-radius:10px;text-decoration:none;font-weight:600;font-size:.83rem;">🗺️ Open Outbound Route</a>
+        <a href="https://www.google.com/maps/dir/?api=1&origin=Capitol+Reef+National+Park&destination=Sacramento,+CA&waypoints=Pismo+Beach,+CA&travelmode=driving" target="_blank" style="display:block;background:var(--sage);color:#fff;text-align:center;padding:12px;border-radius:10px;text-decoration:none;font-weight:600;font-size:.83rem;">🗺️ Open Return Route</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CHECKLIST ===== -->
+<div id="section-checklist" style="display:none; padding:14px 14px 100px;">
+  <div class="sync-notice"><div class="icon">💾</div><p><strong>Checklist syncs across devices</strong>Tap any item to check it off — saved to the cloud instantly.</p></div>
+  <div class="check-group">
+    <div class="check-group-title">🎟️ Park Pass</div>
+    <div class="check-item" data-key="pass1" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Every Kid Outdoors Voucher — Obtained ✅</span><span class="check-sub">4th grade pass secured</span></div></div>
+    <div class="check-item" data-key="pass2" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Print Voucher on Paper</span><span class="check-sub">Phone NOT accepted — must be printed</span></div><span class="urgent-tag">PRINT</span></div>
+  </div>
+  <div class="check-group">
+    <div class="check-group-title">🏨 Hotels — All Booked ✅</div>
+    <div class="check-item" data-key="h1" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Allegretto Vineyard Resort — Mar 30</span><span class="check-sub">Paso Robles, CA</span></div></div>
+    <div class="check-item" data-key="h2" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Courtyard by Marriott Sedona — Mar 31</span><span class="check-sub">4105 W State Route 89A, Sedona</span></div></div>
+    <div class="check-item" data-key="h3" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Yavapai Lodge — Apr 2</span><span class="check-sub">Inside Grand Canyon NP</span></div></div>
+    <div class="check-item" data-key="h4" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">SpringHill Suites Springdale — Apr 3</span><span class="check-sub">1141 Canyon Springs Rd, UT</span></div></div>
+    <div class="check-item" data-key="h5" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Capitol Reef Resort — Apr 4</span><span class="check-sub">2600 E. Hwy 24, Torrey, UT</span></div></div>
+    <div class="check-item" data-key="h6" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Sandcastle Hotel — Apr 5</span><span class="check-sub">100 Stimson Ave, Pismo Beach</span></div></div>
+  </div>
+  <div class="check-group">
+    <div class="check-group-title">📱 Before You Leave</div>
+    <div class="check-item" data-key="pre1" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Download Offline Maps</span><span class="check-sub">Utah Byway 12 + Grand Canyon — spotty cell service</span></div><span class="urgent-tag">DO THIS</span></div>
+    <div class="check-item" data-key="pre2" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Share roadtrip.jleone.ai with Wife</span><span class="check-sub">Bookmark on both phones before leaving</span></div></div>
+    <div class="check-item" data-key="pre3" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Check Zion Shuttle Schedule</span><span class="check-sub">Confirm operating dates for early April</span></div></div>
+    <div class="check-item" data-key="pre4" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Note Hotel Cancellation Deadlines</span><span class="check-sub">Add to calendar for each property</span></div></div>
+    <div class="check-item" data-key="pre5" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Set TV to roadtrip.jleone.ai?tv=1</span><span class="check-sub">Test the live map on the TV browser before leaving</span></div></div>
+  </div>
+  <div class="check-group">
+    <div class="check-group-title">📅 5–7 Days Before</div>
+    <div class="check-item" data-key="w1" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Check Weather — Sedona / Zion / Capitol Reef</span><span class="check-sub">Late March can have snow at elevation</span></div></div>
+    <div class="check-item" data-key="w2" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Reconfirm All Hotel Bookings</span><span class="check-sub">Especially Yavapai Lodge</span></div></div>
+    <div class="check-item" data-key="w3" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text"><span class="check-main">Check Capitol Reef Road Conditions</span><span class="check-sub">nps.gov/care — confirm Scenic Drive is open</span></div></div>
+  </div>
+</div>
+
+<!-- ===== PHOTOS ===== -->
+<div id="section-photos" style="display:none; padding:14px 14px 100px;">
+  <div class="sync-notice"><div class="icon">📸</div><p><strong>Photos sync across all devices instantly</strong>Upload from any phone — appears on your wife's phone and the TV within seconds. All Leone family memories in one place.</p></div>
+  <div class="photo-upload-zone" onclick="document.getElementById('photo-input').click()">
+    <span class="upload-icon">📷</span>
+    <span class="upload-text">Add a Leone Family Photo</span>
+    <span class="upload-sub">Tap to take a photo or choose from camera roll</span>
+  </div>
+  <input type="file" id="photo-input" accept="image/*" multiple onchange="handlePhotos(event)">
+  <div class="upload-progress" id="upload-progress">
+    <span class="progress-text" id="progress-text">Uploading...</span>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+  </div>
+  <div id="photo-empty" class="empty-photos"><div style="font-size:2rem;margin-bottom:8px;">🌵</div><div>Leone family trip photos will appear here.<br>Both phones share the same album!</div></div>
+  <div id="photo-loading" class="loading-photos" style="display:none;">Loading photos...</div>
+  <div id="photo-grid" class="photo-grid"></div>
+</div>
+
+<!-- TV OVERLAY -->
+<div class="tv-overlay" id="tv-overlay">
+  <div class="tv-header">
+    <div class="tv-title">🌵 Leone Family Adventure</div>
+    <div class="tv-status">
+      <div class="tv-location" id="tv-location-text">Waiting for location...</div>
+      <div class="tv-updated" id="tv-updated-text"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== SUPABASE INIT =====
+const { createClient } = supabase;
+const sb = createClient(
+  'https://mzwkurrpzjwaxjwutfhd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16d2t1cnJwemp3YXhqd3V0ZmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDUyMzEsImV4cCI6MjA5MDIyMTIzMX0.KeBzQEDpkoXu3szws9jHbN710pHlTYwqHAqalzyNL4U'
+);
+
+// ===== COUNTDOWN =====
+const tripStart = new Date('2025-03-30T07:00:00');
+function updateCountdown() {
+  const diff = tripStart - new Date();
+  if (diff <= 0) {
+    ['cnt-d','cnt-h','cnt-m'].forEach((id,i) => document.getElementById(id).textContent = ['🚐','00','00'][i]);
+    return;
+  }
+  document.getElementById('cnt-d').textContent = String(Math.floor(diff/86400000)).padStart(2,'0');
+  document.getElementById('cnt-h').textContent = String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
+  document.getElementById('cnt-m').textContent = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+}
+updateCountdown();
+setInterval(updateCountdown, 60000);
+
+// ===== DEPART ALERT =====
+const deptSchedule = {
+  '2025-03-30':{time:'7:00 AM',detail:'Paso Robles — 4.5 hrs. Easy day.'},
+  '2025-03-31':{time:'6:30 AM',detail:'Longest drive — 9 hrs to Sedona. Leave early!'},
+  '2025-04-01':{time:'11:00 AM',detail:'Short 2-hr drive to Buckeye. Enjoy Sedona morning first.'},
+  '2025-04-02':{time:'9:00 AM',detail:'Grand Canyon — 3.5 hrs. Full afternoon on the rim.'},
+  '2025-04-03':{time:'10:00 AM',detail:'Zion — 5 hrs. Morning at Grand Canyon rim first.'},
+  '2025-04-04':{time:'12:00 PM',detail:'Morning in Zion, then 4.5 hrs on Scenic Byway 12.'},
+  '2025-04-05':{time:'7:00 AM',detail:'Long return — 9 hrs to Pismo Beach. Leave early!'},
+  '2025-04-06':{time:'9:00 AM',detail:'Final leg home — 5.5 hrs to Sacramento.'},
+};
+(function() {
+  const today = new Date().toISOString().split('T')[0];
+  const e = deptSchedule[today];
+  if (e) {
+    document.getElementById('depart-alert').style.display = 'flex';
+    document.getElementById('depart-time-display').textContent = e.time;
+    document.getElementById('depart-detail').textContent = e.detail;
+  }
+})();
+
+// ===== TABS =====
+function showDay(day) {
+  document.querySelectorAll('.tab-btn').forEach((t,i) => t.classList.toggle('active', i===day));
+  document.querySelectorAll('.day-card').forEach(c => {
+    const d = parseInt(c.dataset.day);
+    const show = day===0 || d===day;
+    c.style.display = show ? 'block' : 'none';
+    c.classList.toggle('active', show);
+  });
+}
+showDay(0);
+
+// ===== SECTIONS =====
+function showSection(sec) {
+  ['schedule','map','overview','checklist','photos'].forEach(s => {
+    const el = document.getElementById('section-'+s);
+    if (el) el.style.display = s===sec ? 'block' : 'none';
+  });
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('nav-'+sec);
+  if (btn) btn.classList.add('active');
+  if (sec==='map') initMap();
+  if (sec==='photos') loadPhotos();
+  if (sec==='checklist') loadChecklist();
+}
+
+// ===== CHECKLIST (Supabase) =====
+async function loadChecklist() {
+  const { data } = await sb.from('trip_state').select('key,value');
+  if (!data) return;
+  data.forEach(row => {
+    if (row.value === 'true') {
+      const el = document.querySelector(`[data-key="${row.key}"]`);
+      if (el) {
+        el.classList.add('checked');
+        el.querySelector('.check-box').textContent = '✓';
+      }
+    }
+  });
+}
+
+async function toggleCheck(item) {
+  item.classList.toggle('checked');
+  const box = item.querySelector('.check-box');
+  const isChecked = item.classList.contains('checked');
+  box.textContent = isChecked ? '✓' : '';
+  const key = item.dataset.key;
+  if (key) {
+    await sb.from('trip_state').upsert({ key, value: String(isChecked) }, { onConflict: 'key' });
+  }
+}
+
+// ===== PHOTOS (Supabase) =====
+async function handlePhotos(event) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+  const progress = document.getElementById('upload-progress');
+  const bar = document.getElementById('progress-bar');
+  const text = document.getElementById('progress-text');
+  progress.style.display = 'block';
+  let done = 0;
+  for (const file of files) {
+    const compressed = await compressImage(file);
+    const filename = `leone_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+    text.textContent = `Uploading ${done+1} of ${files.length}...`;
+    bar.style.width = `${(done/files.length)*100}%`;
+    const { data: uploadData, error } = await sb.storage.from('trip-photos').upload(filename, compressed, { contentType: 'image/jpeg' });
+    if (!error) {
+      const { data: { publicUrl } } = sb.storage.from('trip-photos').getPublicUrl(filename);
+      const caption = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+      await sb.from('trip_photos').insert({ url: publicUrl, caption });
+    }
+    done++;
+  }
+  bar.style.width = '100%';
+  text.textContent = `${done} photo${done>1?'s':''} uploaded!`;
+  setTimeout(() => { progress.style.display = 'none'; bar.style.width='0%'; }, 2000);
+  event.target.value = '';
+  loadPhotos();
+}
+
+async function compressImage(file) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxSize = 800;
+        let w = img.width, h = img.height;
+        if (w > h && w > maxSize) { h = h*(maxSize/w); w = maxSize; }
+        else if (h > maxSize) { w = w*(maxSize/h); h = maxSize; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.75);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function loadPhotos() {
+  const loading = document.getElementById('photo-loading');
+  const empty = document.getElementById('photo-empty');
+  const grid = document.getElementById('photo-grid');
+  loading.style.display = 'block';
+  empty.style.display = 'none';
+  grid.innerHTML = '';
+  const { data, error } = await sb.from('trip_photos').select('*').order('uploaded_at', { ascending: false });
+  loading.style.display = 'none';
+  if (!data || data.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = data.map(p => `
+    <div class="photo-item">
+      <img src="${p.url}" alt="Leone trip photo" loading="lazy">
+      <div class="photo-caption">${p.caption||''}</div>
+    </div>
+  `).join('');
+}
+
+// ===== LIVE MAP (Supabase) =====
+let map = null, userMarker = null, locationInterval = null, isSharing = false;
+
+const routePoints = [
+  {name:'Sacramento, CA', lat:38.5816, lng:-121.4944},
+  {name:'Paso Robles, CA', lat:35.6266, lng:-120.6908},
+  {name:'Sedona, AZ', lat:34.8697, lng:-111.7610},
+  {name:'Buckeye, AZ', lat:33.3700, lng:-112.5838},
+  {name:'Grand Canyon S. Rim', lat:36.0544, lng:-112.1401},
+  {name:'Zion NP, UT', lat:37.2982, lng:-113.0263},
+  {name:'Capitol Reef, UT', lat:38.0877, lng:-111.1492},
+  {name:'Pismo Beach, CA', lat:35.1428, lng:-120.6413},
+];
+
+function initMap() {
+  if (map) { map.invalidateSize(); return; }
+  map = L.map('trip-map', {zoomControl:true, attributionControl:false}).setView([36.5,-112],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
+  L.polyline(routePoints.map(p=>[p.lat,p.lng]),{color:'#C4622D',weight:3,opacity:.7,dashArray:'8,6'}).addTo(map);
+  routePoints.forEach((pt,i) => {
+    const icon = L.divIcon({html:`<div style="background:#fff;border:2px solid #C4622D;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#C4622D;box-shadow:0 2px 6px rgba(0,0,0,.2);">${i+1}</div>`,className:'',iconSize:[26,26],iconAnchor:[13,13]});
+    L.marker([pt.lat,pt.lng],{icon}).addTo(map).bindPopup(`<b>${pt.name}</b><br>Stop ${i+1}`);
+  });
+  loadSavedLocation();
+}
+
+async function loadSavedLocation() {
+  const {data} = await sb.from('trip_state').select('value').eq('key','gps_location').single();
+  if (data?.value) {
+    const loc = JSON.parse(data.value);
+    showLocationOnMap(loc.lat, loc.lng, loc.time);
+  }
+}
+
+function showLocationOnMap(lat, lng, timeStr) {
+  if (!map) return;
+  const icon = L.divIcon({html:`<div style="background:#C4622D;border:3px solid #fff;border-radius:50%;width:22px;height:22px;box-shadow:0 2px 8px rgba(196,98,45,.6);"></div>`,className:'',iconSize:[22,22],iconAnchor:[11,11]});
+  if (userMarker) map.removeLayer(userMarker);
+  userMarker = L.marker([lat,lng],{icon}).addTo(map).bindPopup('🚐 Leone Family is here!');
+  map.setView([lat,lng],9);
+  document.getElementById('status-dot').className = 'status-dot active';
+  document.getElementById('status-text').textContent = 'Location sharing active';
+  document.getElementById('status-time').textContent = 'Updated ' + timeStr;
+  if (document.body.classList.contains('tv-mode')) {
+    document.getElementById('tv-location-text').textContent = '🚐 Leone Family is on the road';
+    document.getElementById('tv-updated-text').textContent = 'Last updated: ' + timeStr;
+  }
+}
+
+async function saveLocation(lat, lng) {
+  const timeStr = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  await sb.from('trip_state').upsert({key:'gps_location', value: JSON.stringify({lat,lng,time:timeStr})},{onConflict:'key'});
+  showLocationOnMap(lat, lng, timeStr);
+}
+
+function toggleSharing() {
+  if (!isSharing) {
+    if (!navigator.geolocation) { alert('Location not supported on this device.'); return; }
+    navigator.geolocation.getCurrentPosition(pos => {
+      isSharing = true;
+      document.getElementById('share-btn').textContent = '⏹ Stop Sharing Location';
+      document.getElementById('share-btn').classList.add('sharing');
+      if (!map) initMap();
+      saveLocation(pos.coords.latitude, pos.coords.longitude);
+      locationInterval = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(p => saveLocation(p.coords.latitude, p.coords.longitude));
+      }, 30000);
+    }, () => alert('Please allow location access in your browser settings.'), {enableHighAccuracy:true});
+  } else {
+    isSharing = false;
+    clearInterval(locationInterval);
+    document.getElementById('share-btn').textContent = '📍 Start Sharing My Location';
+    document.getElementById('share-btn').classList.remove('sharing');
+    document.getElementById('status-dot').className = 'status-dot inactive';
+    document.getElementById('status-text').textContent = 'Not sharing location';
+    document.getElementById('status-time').textContent = '';
+  }
+}
+
+function copyTvLink() {
+  const url = 'https://roadtrip.jleone.ai?tv=1';
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.querySelector('.tv-copy-btn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = 'Copy Link', 2000);
+  }).catch(() => prompt('Copy this TV link:', url));
+}
+
+// ===== TV MODE =====
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('tv') === '1') {
+    document.body.classList.add('tv-mode');
+    document.getElementById('tv-overlay').style.display = 'flex';
+    showSection('map');
+    setTimeout(initMap, 200);
+    // Refresh location from Supabase every 30s on TV
+    setInterval(loadSavedLocation, 30000);
+  }
+})();
+</script>
+</body>
+</html>
