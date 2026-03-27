@@ -624,7 +624,7 @@ async function toggleCheck(item) {
   const key = item.dataset.key;
   if (!key) return;
   // Try update first, then insert if not exists
-  const { data: existing } = await sb.from('trip_state').select('key').eq('key', key).single();
+  const { data: existing } = await sb.from('trip_state').select('id').eq('key', key).maybeSingle();
   if (existing) {
     await sb.from('trip_state').update({ value: String(isChecked) }).eq('key', key);
   } else {
@@ -733,7 +733,9 @@ function initMap() {
 }
 
 async function loadSavedLocation() {
-  const {data} = await sb.from('trip_state').select('value').eq('key','gps_location').single();
+  // Use maybeSingle() instead of single() — returns null instead of 406 when no row exists
+  const {data, error} = await sb.from('trip_state').select('value').eq('key','gps_location').maybeSingle();
+  if (error) { console.warn('[GPS] loadSavedLocation error:', error.message); return; }
   if (data?.value) {
     const loc = JSON.parse(data.value);
     showLocationOnMap(loc.lat, loc.lng, loc.time);
@@ -762,23 +764,56 @@ function showLocationOnMap(lat, lng, timeStr) {
 
 async function saveLocation(lat, lng) {
   const timeStr = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-  await sb.from('trip_state').upsert({key:'gps_location', value: JSON.stringify({lat,lng,time:timeStr})},{onConflict:'key'});
+  console.log('[GPS] Saving location:', lat, lng);
+  // Check if row exists first, then insert or update
+  const { data: existing } = await sb.from('trip_state').select('id').eq('key','gps_location').maybeSingle();
+  let error;
+  if (existing) {
+    ({ error } = await sb.from('trip_state').update({ value: JSON.stringify({lat,lng,time:timeStr}) }).eq('key','gps_location'));
+  } else {
+    ({ error } = await sb.from('trip_state').insert({ key:'gps_location', value: JSON.stringify({lat,lng,time:timeStr}) }));
+  }
+  if (error) {
+    console.error('[GPS] Supabase save error:', error);
+    alert('GPS save error: ' + error.message + '\n\nCheck browser console for details.');
+    return false;
+  }
+  console.log('[GPS] Saved successfully:', data);
   showLocationOnMap(lat, lng, timeStr);
+  return true;
 }
 
 function toggleSharing() {
   if (!isSharing) {
-    if (!navigator.geolocation) { alert('Location not supported on this device.'); return; }
-    navigator.geolocation.getCurrentPosition(pos => {
-      isSharing = true;
-      document.getElementById('share-btn').textContent = '⏹ Stop Sharing Location';
-      document.getElementById('share-btn').classList.add('sharing');
-      if (!map) initMap();
-      saveLocation(pos.coords.latitude, pos.coords.longitude);
-      locationInterval = setInterval(() => {
-        navigator.geolocation.getCurrentPosition(p => saveLocation(p.coords.latitude, p.coords.longitude));
-      }, 30000);
-    }, () => alert('Please allow location access in your browser settings.'), {enableHighAccuracy:true});
+    if (!navigator.geolocation) {
+      alert('Location not supported on this device.');
+      return;
+    }
+    setStatus('⏳ Requesting location permission...');
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        setStatus('📡 Got GPS coords — saving to cloud...');
+        isSharing = true;
+        document.getElementById('share-btn').textContent = '⏹ Stop Sharing Location';
+        document.getElementById('share-btn').classList.add('sharing');
+        if (!map) initMap();
+        const result = await saveLocation(pos.coords.latitude, pos.coords.longitude);
+        if (result) {
+          setStatus('✅ Location saved! Updating every 30s.');
+        } else {
+          setStatus('❌ GPS coords got but cloud save failed — see alert');
+        }
+        locationInterval = setInterval(async () => {
+          navigator.geolocation.getCurrentPosition(p => saveLocation(p.coords.latitude, p.coords.longitude));
+        }, 30000);
+      },
+      err => {
+        const msgs = {1:'Permission denied — allow location in browser settings', 2:'Position unavailable', 3:'Timeout getting location'};
+        alert('Location error: ' + (msgs[err.code] || err.message));
+        setStatus('❌ Location error: ' + (msgs[err.code] || err.message));
+      },
+      {enableHighAccuracy: true, timeout: 15000}
+    );
   } else {
     isSharing = false;
     clearInterval(locationInterval);
@@ -788,6 +823,12 @@ function toggleSharing() {
     document.getElementById('status-text').textContent = 'Not sharing location';
     document.getElementById('status-time').textContent = '';
   }
+}
+
+function setStatus(msg) {
+  document.getElementById('status-dot').className = 'status-dot active';
+  document.getElementById('status-text').textContent = msg;
+  console.log('[GPS]', msg);
 }
 
 function copyTvLink() {
