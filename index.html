@@ -183,6 +183,22 @@
   /* UPLOAD PROGRESS */
   .upload-progress { background:#fff; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:none; box-shadow:0 1px 6px rgba(44,62,80,.08); }
 
+  /* LOCATION PICKER MODAL */
+  .loc-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:9997; align-items:flex-end; justify-content:center; }
+  .loc-modal.open { display:flex; }
+  .loc-modal-inner { background:#fff; border-radius:20px 20px 0 0; padding:24px 20px 40px; width:100%; max-width:500px; animation:slideUp .25s ease; }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+  .loc-modal-title { font-family:"Playfair Display",serif; font-size:1.1rem; font-weight:700; color:var(--dusk); margin-bottom:6px; }
+  .loc-modal-sub { font-size:.78rem; color:var(--warm-gray); margin-bottom:16px; line-height:1.4; }
+  .loc-option { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px; border:1.5px solid #eee; margin-bottom:8px; cursor:pointer; transition:all .15s; }
+  .loc-option:hover, .loc-option.selected { border-color:var(--rust); background:#fff8f5; }
+  .loc-option-num { width:28px; height:28px; border-radius:50%; background:var(--rust); color:#fff; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; flex-shrink:0; }
+  .loc-option-name { font-size:.84rem; font-weight:600; color:var(--dusk); display:block; }
+  .loc-option-date { font-size:.72rem; color:var(--warm-gray); }
+  .loc-modal-btns { display:flex; gap:10px; margin-top:16px; }
+  .loc-confirm-btn { flex:1; padding:13px; background:var(--rust); color:#fff; border:none; border-radius:11px; font-family:"DM Sans",sans-serif; font-size:.9rem; font-weight:600; cursor:pointer; }
+  .loc-skip-btn { padding:13px 18px; background:#f5f5f5; color:var(--warm-gray); border:none; border-radius:11px; font-family:"DM Sans",sans-serif; font-size:.9rem; font-weight:600; cursor:pointer; }
+
   /* DEBUG PANEL */
   #debug-panel { display:none; position:fixed; bottom:80px; left:10px; right:10px; max-height:40vh; background:rgba(0,0,0,.92); border-radius:12px; z-index:9998; overflow-y:auto; padding:10px 12px; font-family:monospace; font-size:.7rem; color:#00ff88; }
   #debug-panel.open { display:block; }
@@ -544,6 +560,19 @@
   <div id="photo-grid" class="photo-grid"></div>
 </div>
 
+<!-- LOCATION PICKER MODAL -->
+<div class="loc-modal" id="loc-modal">
+  <div class="loc-modal-inner">
+    <div class="loc-modal-title">📍 Where was this photo taken?</div>
+    <div class="loc-modal-sub">Pick the stop closest to where you took it — we'll pin it there on the memory map.</div>
+    <div id="loc-options"></div>
+    <div class="loc-modal-btns">
+      <button class="loc-skip-btn" onclick="locSkip()">No pin</button>
+      <button class="loc-confirm-btn" onclick="locConfirm()">Pin it here</button>
+    </div>
+  </div>
+</div>
+
 <!-- DEBUG PANEL -->
 <button id="debug-toggle" onclick="toggleDebug()" style="display:none">🔍 Debug</button>
 <div id="debug-panel"></div>
@@ -693,6 +722,63 @@ async function toggleCheck(item) {
 }
 
 // ===== PHOTOS (Supabase) =====
+// Trip stops for location picker
+const tripStops = [
+  {num:1, name:'El Dorado Hills — Home', date:'Mar 30', lat:38.6852, lng:-121.0755},
+  {num:2, name:'Paso Robles', date:'Mar 30 night', lat:35.6266, lng:-120.6908},
+  {num:3, name:'Sedona', date:'Mar 31 night', lat:34.8697, lng:-111.7610},
+  {num:4, name:'Buckeye (Friends)', date:'Apr 1 night', lat:33.3700, lng:-112.5838},
+  {num:5, name:'Grand Canyon', date:'Apr 2 night', lat:36.0544, lng:-112.1401},
+  {num:6, name:'Zion National Park', date:'Apr 3 night', lat:37.2982, lng:-113.0263},
+  {num:7, name:'Capitol Reef', date:'Apr 4 night', lat:38.0877, lng:-111.1492},
+  {num:8, name:'Pismo Beach', date:'Apr 5 night', lat:35.1428, lng:-120.6413},
+];
+
+let locPickerResolve = null;
+let locPickerSelected = null;
+
+function showLocationPicker() {
+  return new Promise((resolve) => {
+    locPickerResolve = resolve;
+    locPickerSelected = null;
+
+    // Build options
+    const container = document.getElementById('loc-options');
+    container.innerHTML = tripStops.map((s,i) => `
+      <div class="loc-option" id="loc-opt-${i}" onclick="selectLoc(${i})">
+        <div class="loc-option-num">${s.num}</div>
+        <div>
+          <span class="loc-option-name">${s.name}</span>
+          <span class="loc-option-date">${s.date}</span>
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('loc-modal').classList.add('open');
+  });
+}
+
+function selectLoc(index) {
+  locPickerSelected = index;
+  document.querySelectorAll('.loc-option').forEach((el, i) => {
+    el.classList.toggle('selected', i === index);
+  });
+}
+
+function locConfirm() {
+  document.getElementById('loc-modal').classList.remove('open');
+  if (locPickerSelected !== null && locPickerResolve) {
+    locPickerResolve(tripStops[locPickerSelected]);
+  } else {
+    locPickerResolve(null);
+  }
+}
+
+function locSkip() {
+  document.getElementById('loc-modal').classList.remove('open');
+  if (locPickerResolve) locPickerResolve(null);
+}
+
 // ===== ON-SCREEN DEBUG LOG =====
 const debugLines = [];
 function dbg(msg, type='info') {
