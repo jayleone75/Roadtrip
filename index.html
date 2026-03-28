@@ -183,6 +183,15 @@
   /* UPLOAD PROGRESS */
   .upload-progress { background:#fff; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:none; box-shadow:0 1px 6px rgba(44,62,80,.08); }
 
+  /* DEBUG PANEL */
+  #debug-panel { display:none; position:fixed; bottom:80px; left:10px; right:10px; max-height:40vh; background:rgba(0,0,0,.92); border-radius:12px; z-index:9998; overflow-y:auto; padding:10px 12px; font-family:monospace; font-size:.7rem; color:#00ff88; }
+  #debug-panel.open { display:block; }
+  .debug-line { border-bottom:1px solid rgba(255,255,255,.08); padding:3px 0; line-height:1.4; }
+  .debug-line.err { color:#ff6b6b; }
+  .debug-line.ok { color:#00ff88; }
+  .debug-line.warn { color:#ffd93d; }
+  #debug-toggle { position:fixed; bottom:140px; right:14px; background:#2C3E50; color:#fff; border:none; border-radius:20px; padding:6px 12px; font-size:.72rem; font-weight:600; cursor:pointer; z-index:9999; font-family:"DM Sans",sans-serif; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+
   /* PHOTO MAP */
   #photo-map { width:100%; height:280px; border-radius:14px; margin-bottom:14px; }
   .photo-map-wrap { position:relative; margin-bottom:14px; }
@@ -535,6 +544,10 @@
   <div id="photo-grid" class="photo-grid"></div>
 </div>
 
+<!-- DEBUG PANEL -->
+<button id="debug-toggle" onclick="toggleDebug()" style="display:none">🔍 Debug</button>
+<div id="debug-panel"></div>
+
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
   <div class="lightbox-inner">
@@ -621,10 +634,10 @@ function showSection(sec, pushState=true) {
   const btn = document.getElementById('nav-'+sec);
   if (btn) btn.classList.add('active');
   if (sec==='map') initMap();
-  if (sec==='photos') { loadPhotos(); startPhotoPolling(); }
+  if (sec==='photos') { loadPhotos(); startPhotoPolling(); showDebugBtn(true); }
   if (sec==='checklist') loadChecklist();
   // Stop photo polling when leaving photos tab
-  if (sec!=='photos') stopPhotoPolling();
+  if (sec!=='photos') { stopPhotoPolling(); showDebugBtn(false); }
   // Persist active tab in URL without triggering a reload
   if (pushState && !document.body.classList.contains('tv-mode')) {
     const params = new URLSearchParams(window.location.search);
@@ -680,6 +693,32 @@ async function toggleCheck(item) {
 }
 
 // ===== PHOTOS (Supabase) =====
+// ===== ON-SCREEN DEBUG LOG =====
+const debugLines = [];
+function dbg(msg, type='info') {
+  console.log('[DBG]', msg);
+  debugLines.unshift(msg); // newest first
+  if (debugLines.length > 50) debugLines.pop();
+  const panel = document.getElementById('debug-panel');
+  if (panel) {
+    panel.innerHTML = debugLines.map(l => {
+      const cls = l.includes('✅') ? 'ok' : l.includes('❌') || l.includes('error') || l.includes('Error') ? 'err' : l.includes('No ') || l.includes('stripped') ? 'warn' : '';
+      return `<div class="debug-line ${cls}">${l}</div>`;
+    }).join('');
+  }
+}
+
+function toggleDebug() {
+  const panel = document.getElementById('debug-panel');
+  panel.classList.toggle('open');
+}
+
+// Show debug button when on photos tab
+function showDebugBtn(show) {
+  const btn = document.getElementById('debug-toggle');
+  if (btn) btn.style.display = show ? 'block' : 'none';
+}
+
 // ===== BUILT-IN JPEG EXIF GPS PARSER (no external library) =====
 function extractGPS(file) {
   return new Promise((resolve) => {
@@ -692,12 +731,12 @@ function extractGPS(file) {
         // Log file size and first bytes for mobile debugging
         const firstBytes = Array.from(new Uint8Array(buf.slice(0, 32)))
           .map(b => '0x'+b.toString(16).padStart(2,'0')).join(' ');
-        console.log('[EXIF] File:', file.name, 'size:', buf.byteLength, 'bytes');
-        console.log('[EXIF] First 32 bytes:', firstBytes);
+        dbg('[EXIF] File:', file.name, 'size:', buf.byteLength, 'bytes');
+        dbg('[EXIF] First 32 bytes:', firstBytes);
 
         // Verify JPEG signature
         if (view.getUint16(0) !== 0xFFD8) {
-          console.log('[EXIF] Not a JPEG — first bytes dont match 0xFFD8');
+          dbg('[EXIF] Not a JPEG — first bytes dont match 0xFFD8');
           resolve(null); return;
         }
 
@@ -711,19 +750,19 @@ function extractGPS(file) {
 
           if (marker === 0xFFE1) {
             const segLen = view.getUint16(offset);
-            console.log('[EXIF] Found APP1 marker, segment length:', segLen);
+            dbg('[EXIF] Found APP1 marker, segment length:', segLen);
             // Check for "Exif" header
             const b2 = offset+2, b3 = offset+3, b4 = offset+4, b5 = offset+5;
             const exifHeader = String.fromCharCode(
               view.getUint8(b2), view.getUint8(b3),
               view.getUint8(b4), view.getUint8(b5)
             );
-            console.log('[EXIF] APP1 header chars:', exifHeader, '(expected: Exif)');
+            dbg('[EXIF] APP1 header chars:', exifHeader, '(expected: Exif)');
             if (exifHeader === 'Exif') {
               const tiffStart = offset + 8;
-              console.log('[EXIF] TIFF starts at offset:', tiffStart);
+              dbg('[EXIF] TIFF starts at offset:', tiffStart);
               const gps = parseGPSFromTIFF(view, tiffStart);
-              console.log('[EXIF] parseGPSFromTIFF result:', gps);
+              dbg('[EXIF] parseGPSFromTIFF result:', gps);
               resolve(gps);
               return;
             }
@@ -732,7 +771,7 @@ function extractGPS(file) {
           } else if (marker === 0xFFE0) {
             // APP0 (JFIF) — log and skip
             const segLen = view.getUint16(offset);
-            console.log('[EXIF] Found APP0/JFIF marker — this phone may serve JFIF stripped of EXIF');
+            dbg('[EXIF] Found APP0/JFIF marker — this phone may serve JFIF stripped of EXIF');
             offset += segLen;
           } else if ((marker & 0xFF00) === 0xFF00 && marker !== 0xFFDA) {
             if (offset + 2 > view.byteLength) break;
@@ -742,8 +781,8 @@ function extractGPS(file) {
             break;
           }
         }
-        console.log('[EXIF] All markers scanned:', markersFound.join(', '));
-        console.log('[EXIF] No Exif APP1 found — EXIF was stripped by OS/browser');
+        dbg('[EXIF] All markers scanned:', markersFound.join(', '));
+        dbg('[EXIF] No Exif APP1 found — EXIF was stripped by OS/browser');
         resolve(null);
       } catch(e) {
         console.error('[EXIF] extractGPS crash:', e.message);
@@ -759,14 +798,14 @@ function parseGPSFromTIFF(view, tiffStart) {
   try {
     const byteOrder = view.getUint16(tiffStart);
     const le = byteOrder === 0x4949;
-    console.log('[EXIF] Byte order:', le ? 'little-endian' : 'big-endian', '(0x'+byteOrder.toString(16)+')');
+    dbg('[EXIF] Byte order:', le ? 'little-endian' : 'big-endian', '(0x'+byteOrder.toString(16)+')');
 
     const readUint16 = (o) => view.getUint16(tiffStart + o, le);
     const readUint32 = (o) => view.getUint32(tiffStart + o, le);
 
     const ifd0Offset = readUint32(4);
     const ifd0Count = readUint16(ifd0Offset);
-    console.log('[EXIF] IFD0 offset:', ifd0Offset, 'entries:', ifd0Count);
+    dbg('[EXIF] IFD0 offset:', ifd0Offset, 'entries:', ifd0Count);
 
     let gpsIFDOffset = null;
     const tagsSeen = [];
@@ -776,15 +815,15 @@ function parseGPSFromTIFF(view, tiffStart) {
       tagsSeen.push('0x'+tag.toString(16));
       if (tag === 0x8825) {
         gpsIFDOffset = readUint32(entryOffset + 8);
-        console.log('[EXIF] Found GPS IFD at offset:', gpsIFDOffset);
+        dbg('[EXIF] Found GPS IFD at offset:', gpsIFDOffset);
       }
     }
-    console.log('[EXIF] IFD0 tags seen:', tagsSeen.join(', '));
+    dbg('[EXIF] IFD0 tags seen:', tagsSeen.join(', '));
 
-    if (!gpsIFDOffset) { console.log('[EXIF] No GPS IFD found'); return null; }
+    if (!gpsIFDOffset) { dbg('[EXIF] No GPS IFD found'); return null; }
 
     const gpsCount = readUint16(gpsIFDOffset);
-    console.log('[EXIF] GPS IFD entries:', gpsCount);
+    dbg('[EXIF] GPS IFD entries:', gpsCount);
     const gpsData = {};
 
     for (let i = 0; i < gpsCount; i++) {
@@ -792,15 +831,15 @@ function parseGPSFromTIFF(view, tiffStart) {
       const tag = readUint16(entryOffset);
       const type = readUint16(entryOffset + 2);
       const count = readUint32(entryOffset + 4);
-      console.log('[EXIF] GPS tag:', '0x'+tag.toString(16), 'type:', type, 'count:', count);
+      dbg('[EXIF] GPS tag:', '0x'+tag.toString(16), 'type:', type, 'count:', count);
 
       if (tag === 1 || tag === 3) {
         gpsData[tag] = String.fromCharCode(view.getUint8(tiffStart + entryOffset + 8));
-        console.log('[EXIF] Ref tag', tag, '=', gpsData[tag]);
+        dbg('[EXIF] Ref tag', tag, '=', gpsData[tag]);
       } else if (tag === 2 || tag === 4) {
         // Value offset is relative to TIFF start
         const valOffset = readUint32(entryOffset + 8);
-        console.log('[EXIF] Rational valOffset:', valOffset, 'tiffStart:', tiffStart);
+        dbg('[EXIF] Rational valOffset:', valOffset, 'tiffStart:', tiffStart);
         try {
           const d_num = readUint32(valOffset);
           const d_den = readUint32(valOffset + 4);
@@ -808,18 +847,18 @@ function parseGPSFromTIFF(view, tiffStart) {
           const m_den = readUint32(valOffset + 12);
           const s_num = readUint32(valOffset + 16);
           const s_den = readUint32(valOffset + 20);
-          console.log('[EXIF] tag', tag, 'rationals:', d_num+'/'+d_den, m_num+'/'+m_den, s_num+'/'+s_den);
+          dbg('[EXIF] tag', tag, 'rationals:', d_num+'/'+d_den, m_num+'/'+m_den, s_num+'/'+s_den);
           const deg = d_den ? d_num/d_den : 0;
           const min = m_den ? m_num/m_den : 0;
           const sec = s_den ? s_num/s_den : 0;
           gpsData[tag] = deg + min/60 + sec/3600;
-          console.log('[EXIF] tag', tag, 'decimal:', gpsData[tag]);
+          dbg('[EXIF] tag', tag, 'decimal:', gpsData[tag]);
         } catch(re) { console.warn('[EXIF] Rational read error:', re); }
       }
     }
 
     if (!gpsData[2] || !gpsData[4]) {
-      console.log('[EXIF] Missing lat or lng in gpsData:', gpsData);
+      dbg('[EXIF] Missing lat or lng in gpsData:', gpsData);
       return null;
     }
 
@@ -829,12 +868,12 @@ function parseGPSFromTIFF(view, tiffStart) {
     if (gpsData[3] === 'W') lng = -lng;
 
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      console.log('[EXIF] Out of range coords:', lat, lng);
+      dbg('[EXIF] Out of range coords:', lat, lng);
       return null;
     }
     if (lat === 0 && lng === 0) return null;
 
-    console.log('[EXIF] ✅ Final GPS:', lat, lng);
+    dbg('[EXIF] ✅ Final GPS:', lat, lng);
     return { lat, lng };
   } catch(e) {
     console.error('[EXIF] parseGPSFromTIFF error:', e.message, e);
@@ -864,14 +903,14 @@ async function handlePhotos(event) {
       if (coords) {
         photoLat = coords.lat;
         photoLng = coords.lng;
-        console.log('[GPS] ✅ Got GPS from EXIF:', photoLat, photoLng);
+        dbg('[GPS] ✅ Got GPS from EXIF:', photoLat, photoLng);
       }
-    } catch(e) { console.warn('[GPS] EXIF parse error:', e.message); }
+    } catch(e) { dbg('[GPS] ⚠️ EXIF parse error:', e.message); }
 
     // Step 2: If no EXIF GPS (common on mobile), use live device GPS
     if (!photoLat && navigator.geolocation) {
       try {
-        console.log('[GPS] No EXIF GPS — trying live device GPS...');
+        dbg('[GPS] No EXIF GPS — trying live device GPS...');
         const pos = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true,
@@ -881,9 +920,9 @@ async function handlePhotos(event) {
         });
         photoLat = pos.coords.latitude;
         photoLng = pos.coords.longitude;
-        console.log('[GPS] ✅ Got live GPS:', photoLat, photoLng);
+        dbg('[GPS] ✅ Got live GPS:', photoLat, photoLng);
       } catch(e) {
-        console.log('[GPS] Live GPS unavailable:', e.message);
+        dbg('[GPS] Live GPS unavailable:', e.message);
       }
     }
 
@@ -895,14 +934,14 @@ async function handlePhotos(event) {
           const loc = JSON.parse(data.value);
           photoLat = loc.lat;
           photoLng = loc.lng;
-          console.log('[GPS] ✅ Using last known location:', photoLat, photoLng);
+          dbg('[GPS] ✅ Using last known location:', photoLat, photoLng);
         }
-      } catch(e) { console.warn('[GPS] Could not load last known location'); }
+      } catch(e) { dbg('[GPS] ⚠️ Could not load last known location'); }
     }
 
     if (!photoLat) {
       missingGps++;
-      console.log('[GPS] No location available for this photo');
+      dbg('[GPS] No location available for this photo');
     }
 
     const compressed = await compressImage(file);
@@ -913,7 +952,7 @@ async function handlePhotos(event) {
     if (!uploadError) {
       const { data: { publicUrl } } = sb.storage.from('trip-photos').getPublicUrl(filename);
       const caption = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric', hour:'numeric',minute:'2-digit'});
-      console.log('[Upload] Inserting photo with lat:', photoLat, 'lng:', photoLng);
+      dbg('[Upload] Inserting photo with lat:', photoLat, 'lng:', photoLng);
       const { data: insertData, error: insertError } = await sb.from('trip_photos').insert({
         url: publicUrl,
         caption,
@@ -921,12 +960,12 @@ async function handlePhotos(event) {
         lng: photoLng
       }).select();
       if (insertError) {
-        console.error('[Upload] Insert error:', insertError.message, insertError);
+        dbg('[Upload] ❌ Insert error:', insertError.message, insertError);
       } else {
-        console.log('[Upload] ✅ Inserted row:', insertData);
+        dbg('[Upload] ✅ Inserted row:', insertData);
       }
     } else {
-      console.error('[Upload] Storage error:', uploadError.message);
+      dbg('[Upload] ❌ Storage error:', uploadError.message);
     }
     done++;
   }
@@ -966,7 +1005,7 @@ let photoPollingInterval = null;
 function startPhotoPolling() {
   if (photoPollingInterval) return; // already running
   photoPollingInterval = setInterval(() => {
-    console.log('[Photos] Auto-refreshing...');
+    dbg('[Photos] Auto-refreshing...');
     loadPhotos();
   }, 15000); // refresh every 15 seconds
 }
@@ -1146,7 +1185,7 @@ async function initMap() {
 async function loadSavedLocation() {
   // Use maybeSingle() instead of single() — returns null instead of 406 when no row exists
   const {data, error} = await sb.from('trip_state').select('value').eq('key','gps_location').maybeSingle();
-  if (error) { console.warn('[GPS] loadSavedLocation error:', error.message); return; }
+  if (error) { dbg('[GPS] ⚠️ loadSavedLocation error:', error.message); return; }
   if (data?.value) {
     const loc = JSON.parse(data.value);
     showLocationOnMap(loc.lat, loc.lng, loc.time);
@@ -1175,7 +1214,7 @@ function showLocationOnMap(lat, lng, timeStr) {
 
 async function saveLocation(lat, lng) {
   const timeStr = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-  console.log('[GPS] Saving location:', lat, lng);
+  dbg('[GPS] Saving location:', lat, lng);
   // Check if row exists first, then insert or update
   const { data: existing } = await sb.from('trip_state').select('id').eq('key','gps_location').maybeSingle();
   let error;
@@ -1189,7 +1228,7 @@ async function saveLocation(lat, lng) {
     alert('GPS save error: ' + error.message + '\n\nCheck browser console for details.');
     return false;
   }
-  console.log('[GPS] Saved successfully:', data);
+  dbg('[GPS] Saved successfully:', data);
   showLocationOnMap(lat, lng, timeStr);
   return true;
 }
@@ -1239,7 +1278,7 @@ function toggleSharing() {
 function setStatus(msg) {
   document.getElementById('status-dot').className = 'status-dot active';
   document.getElementById('status-text').textContent = msg;
-  console.log('[GPS]', msg);
+  dbg('[GPS]', msg);
 }
 
 function copyTvLink() {
