@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Leone Family Adventure 🌵</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌵</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -183,6 +184,23 @@
   /* UPLOAD PROGRESS */
   .upload-progress { background:#fff; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:none; box-shadow:0 1px 6px rgba(44,62,80,.08); }
 
+  /* EXPLORE SECTION */
+  .explore-section { padding:0 17px 14px; }
+  .explore-item { display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid rgba(44,62,80,.05); }
+  .explore-item:last-child { border-bottom:none; }
+  .explore-emoji { font-size:1.1rem; flex-shrink:0; margin-top:1px; }
+  .explore-content { flex:1; }
+  .explore-name { font-weight:600; font-size:.8rem; color:var(--dusk); display:block; margin-bottom:2px; }
+  .explore-desc { font-size:.72rem; color:var(--warm-gray); line-height:1.4; margin-bottom:4px; }
+  .explore-links { display:flex; gap:6px; flex-wrap:wrap; }
+  .explore-link { display:inline-block; padding:3px 9px; border-radius:20px; font-size:.65rem; font-weight:600; text-decoration:none; transition:all .15s; }
+  .link-maps { background:#EBF5FB; color:var(--sky); }
+  .link-search { background:#EAFAF1; color:var(--sage); }
+  .link-web { background:#FEF9E7; color:#D35400; }
+  .link-maps:hover { background:var(--sky); color:#fff; }
+  .link-search:hover { background:var(--sage); color:#fff; }
+  .link-web:hover { background:#D35400; color:#fff; }
+
   /* LOCATION PICKER MODAL */
   .loc-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:9997; align-items:flex-end; justify-content:center; }
   .loc-modal.open { display:flex; }
@@ -299,6 +317,65 @@
         <div class="food-item"><div class="food-emoji">🍕</div><div><span class="food-name">Allegretto Restaurant (on-site)</span><span class="food-desc">No driving — Mediterranean, kid-friendly. Easy win.</span></div></div>
         <div class="food-item"><div class="food-emoji">🌮</div><div><span class="food-name">Taqueria Santa Cruz</span><span class="food-desc">Budget-friendly, fast, delicious for 5.</span></div></div>
         <div class="food-item"><div class="food-emoji">🍔</div><div><span class="food-name">Thomas Hill Organics</span><span class="food-desc">10 min drive. Farm-to-table, relaxed, kids menu.</span></div></div>
+
+      <div class="explore-section">
+        <div class="section-label">Things to explore</div>
+        <div class="explore-item">
+          <div class="explore-emoji">🍷</div>
+          <div class="explore-content">
+            <span class="explore-name">Sculpterra Winery & Sculpture Garden</span>
+            <span class="explore-desc">Epic sculpture garden with giant animal statues, playground, and picnic areas. Most kid-friendly winery in Paso.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Sculpterra+Winery+Paso+Robles" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Sculpterra+Winery+Paso+Robles" target="_blank" class="explore-link link-search">🔍 Search</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🍷</div>
+          <div class="explore-content">
+            <span class="explore-name">Eberle Winery — Free Cave Tours</span>
+            <span class="explore-desc">Free wine cave tours daily at 11am, 1pm, 3pm. Kids love the caves. Free tasting included.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Eberle+Winery+Paso+Robles" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.eberlewinery.com" target="_blank" class="explore-link link-web">🌐 Website</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🍷</div>
+          <div class="explore-content">
+            <span class="explore-name">Castoro Cellars — Disc Golf + Lawn Games</span>
+            <span class="explore-desc">18-hole disc golf course, yard games, very casual vibe. Grape juice tasting for kids under 21.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Castoro+Cellars+Paso+Robles" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Castoro+Cellars+Paso+Robles+kids" target="_blank" class="explore-link link-search">🔍 Search</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">✈️</div>
+          <div class="explore-content">
+            <span class="explore-name">Estrella Warbird Museum</span>
+            <span class="explore-desc">Military aircraft, classic cars, missiles. Kids love it. $18/person. Great 2-hour stop.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Estrella+Warbird+Museum+Paso+Robles" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Estrella+Warbird+Museum+Paso+Robles" target="_blank" class="explore-link link-search">🔍 Search</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🌟</div>
+          <div class="explore-content">
+            <span class="explore-name">Sensorio Light Installation</span>
+            <span class="explore-desc">Thousands of glowing lights transform the landscape at sunset. Magical for kids and adults. Check hours.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Sensorio+Paso+Robles" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Sensorio+Paso+Robles+tickets" target="_blank" class="explore-link link-search">🔍 Search</a>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -320,6 +397,65 @@
       <div class="food-section"><div class="section-label">Dinner</div>
         <div class="food-item"><div class="food-emoji">🌮</div><div><span class="food-name">Elote Cafe</span><span class="food-desc">Best Mexican in Sedona. Short wait, worth it.</span></div></div>
         <div class="food-item"><div class="food-emoji">🍕</div><div><span class="food-name">Pizza Pazza</span><span class="food-desc">Casual, fast, kids love it. Easy after a 9-hour drive.</span></div></div>
+
+      <div class="explore-section">
+        <div class="section-label">Things to explore</div>
+        <div class="explore-item">
+          <div class="explore-emoji">🚙</div>
+          <div class="explore-content">
+            <span class="explore-name">Pink Jeep Tours — Broken Arrow Trail</span>
+            <span class="explore-desc">Most popular Sedona adventure. Off-road jeep tour through red rocks. Book ahead — sells out.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Pink+Jeep+Tours+Sedona" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.pinkadventuretours.com" target="_blank" class="explore-link link-web">🌐 Book</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🛝</div>
+          <div class="explore-content">
+            <span class="explore-name">Slide Rock State Park</span>
+            <span class="explore-desc">Natural water slide on Oak Creek — 80ft of smooth red rock. Kids go absolutely wild. ~$30/car in April.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Slide+Rock+State+Park+Sedona" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Slide+Rock+State+Park+Sedona+hours+fees" target="_blank" class="explore-link link-search">🔍 Search</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">⛪</div>
+          <div class="explore-content">
+            <span class="explore-name">Chapel of the Holy Cross</span>
+            <span class="explore-desc">Iconic chapel built INTO the red rock cliffs. Free entry, short walk, incredible views. Go early for parking.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Chapel+of+the+Holy+Cross+Sedona" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Chapel+Holy+Cross+Sedona+parking+tips" target="_blank" class="explore-link link-search">🔍 Search</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🦁</div>
+          <div class="explore-content">
+            <span class="explore-name">Out of Africa Wildlife Park</span>
+            <span class="explore-desc">400+ exotic animals, Tiger Splash show, zip line. 30 min south of Sedona. Best zoo in Arizona.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Out+of+Africa+Wildlife+Park+Arizona" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Out+of+Africa+Wildlife+Park+tickets+hours" target="_blank" class="explore-link link-search">🔍 Search</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🎨</div>
+          <div class="explore-content">
+            <span class="explore-name">Tlaquepaque Arts Village</span>
+            <span class="explore-desc">Beautiful Spanish-style courtyard with galleries, unique shops, outdoor sculptures. Free to walk around.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Tlaquepaque+Sedona" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Tlaquepaque+arts+village+Sedona" target="_blank" class="explore-link link-search">🔍 Search</a>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -355,6 +491,52 @@
       <div class="food-section"><div class="section-label">Dining</div>
         <div class="food-item"><div class="food-emoji">🍽️</div><div><span class="food-name">Yavapai Tavern (on-site)</span><span class="food-desc">Casual grill inside the lodge. Kids menu. Easiest option.</span></div></div>
         <div class="food-item"><div class="food-emoji">🥪</div><div><span class="food-name">Canyon Village Market & Deli</span><span class="food-desc">Grab sandwiches, eat outside with canyon views.</span></div></div>
+
+      <div class="explore-section">
+        <div class="section-label">Things to explore</div>
+        <div class="explore-item">
+          <div class="explore-emoji">🎖️</div>
+          <div class="explore-content">
+            <span class="explore-name">Junior Ranger Program — Visitor Center</span>
+            <span class="explore-desc">Free booklets, complete activities, earn an official badge. Perfect for all 3 kids. Allow 45–60 min.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Grand+Canyon+Visitor+Center+South+Rim" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Grand+Canyon+Junior+Ranger+program" target="_blank" class="explore-link link-search">🔍 Search</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🗼</div>
+          <div class="explore-content">
+            <span class="explore-name">Desert View Watchtower</span>
+            <span class="explore-desc">Historic 1932 stone tower 25 miles east. Kids can climb inside. Panoramic views, fewer crowds than South Rim.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Desert+View+Watchtower+Grand+Canyon" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Desert+View+Watchtower+Grand+Canyon" target="_blank" class="explore-link link-search">🔍 Search</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🚌</div>
+          <div class="explore-content">
+            <span class="explore-name">Free Rim Shuttle — Hermit Road</span>
+            <span class="explore-desc">Free park shuttle with multiple overlook stops. Hermit Road closes to private cars — shuttle only. Kids love it.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/search?q=Grand+Canyon+free+shuttle+Hermit+Road+schedule" target="_blank" class="explore-link link-search">🔍 Schedule</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🌅</div>
+          <div class="explore-content">
+            <span class="explore-name">Hopi Point — Best Sunset</span>
+            <span class="explore-desc">Best sunset overlook on the South Rim. Take the free shuttle. Arrive 20–30 min early for a good spot.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Hopi+Point+Grand+Canyon" target="_blank" class="explore-link link-maps">📍 Maps</a>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -376,6 +558,52 @@
       <div class="food-section"><div class="section-label">Dinner</div>
         <div class="food-item"><div class="food-emoji">🍕</div><div><span class="food-name">OSO Restaurant</span><span class="food-desc">Best casual in Springdale. Flatbread, outdoor canyon views.</span></div></div>
         <div class="food-item"><div class="food-emoji">🍔</div><div><span class="food-name">Zion Pizza & Noodle</span><span class="food-desc">In an old church. Classic Springdale family spot.</span></div></div>
+
+      <div class="explore-section">
+        <div class="section-label">Things to explore</div>
+        <div class="explore-item">
+          <div class="explore-emoji">💧</div>
+          <div class="explore-content">
+            <span class="explore-name">The Narrows — Riverside Walk</span>
+            <span class="explore-desc">Walk to where the canyon narrows and water begins. Kids wade in. No permit needed for the lower section.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/search?q=Zion+Narrows+lower+section+no+permit" target="_blank" class="explore-link link-search">🔍 Info</a>
+              <a href="https://www.google.com/maps/search/Temple+of+Sinawava+Zion" target="_blank" class="explore-link link-maps">📍 Trailhead</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🚌</div>
+          <div class="explore-content">
+            <span class="explore-name">Zion Canyon Shuttle System</span>
+            <span class="explore-desc">Free shuttles run through the canyon — no car allowed on Zion Canyon Scenic Drive. Catch it steps from your hotel.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/search?q=Zion+Canyon+shuttle+schedule+stops" target="_blank" class="explore-link link-search">🔍 Schedule</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🦎</div>
+          <div class="explore-content">
+            <span class="explore-name">Canyon Junction Bridge — Wildlife Viewing</span>
+            <span class="explore-desc">Short walk from the shuttle stop. Great spot for deer, wild turkeys, and the Virgin River. Kids love the wildlife.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Canyon+Junction+Bridge+Zion" target="_blank" class="explore-link link-maps">📍 Maps</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🎖️</div>
+          <div class="explore-content">
+            <span class="explore-name">Junior Ranger Program — Zion</span>
+            <span class="explore-desc">Visitor Center at the park entrance. Free booklets, earn a Zion badge. Different activities than Grand Canyon.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Zion+National+Park+Visitor+Center" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Zion+Junior+Ranger+program+kids" target="_blank" class="explore-link link-search">🔍 Info</a>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -397,6 +625,53 @@
       <div class="food-section"><div class="section-label">Dinner in Torrey</div>
         <div class="food-item"><div class="food-emoji">🥩</div><div><span class="food-name">Broken Spur Steakhouse</span><span class="food-desc">Classic Western cowboy vibe. Kids love it. Great portions.</span></div></div>
         <div class="food-item"><div class="food-emoji">🌮</div><div><span class="food-name">Rim Rock Restaurant</span><span class="food-desc">On Capitol Reef Resort property. Scenic and convenient.</span></div></div>
+
+      <div class="explore-section">
+        <div class="section-label">Things to explore</div>
+        <div class="explore-item">
+          <div class="explore-emoji">🍑</div>
+          <div class="explore-content">
+            <span class="explore-name">Fruita Orchards — Capitol Reef</span>
+            <span class="explore-desc">Ancient orchards planted by Mormon settlers. In season you can pick fruit free. Walk among cottonwoods at golden hour.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Fruita+Orchards+Capitol+Reef" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Capitol+Reef+Fruita+orchards+fruit+picking" target="_blank" class="explore-link link-search">🔍 Info</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🪨</div>
+          <div class="explore-content">
+            <span class="explore-name">Capitol Reef Scenic Drive</span>
+            <span class="explore-desc">9-mile paved road through the Waterpocket Fold. Drive it in your van — no hiking required. Stop at petroglyphs.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Capitol+Reef+Scenic+Drive+Utah" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Capitol+Reef+Scenic+Drive+conditions" target="_blank" class="explore-link link-search">🔍 Conditions</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">📸</div>
+          <div class="explore-content">
+            <span class="explore-name">Hogback Ridge — Scenic Byway 12</span>
+            <span class="explore-desc">Narrow ridge with canyon drops on both sides. Pull over at the viewpoint — one of the most dramatic road moments in America.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Hogback+Ridge+Utah+Scenic+Byway+12" target="_blank" class="explore-link link-maps">📍 Maps</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🎖️</div>
+          <div class="explore-content">
+            <span class="explore-name">Junior Ranger Program — Capitol Reef</span>
+            <span class="explore-desc">Third badge of the trip! Visitor Center on Hwy 24. Free, fun for all three kids.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Capitol+Reef+Visitor+Center+Utah" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Capitol+Reef+Junior+Ranger+program" target="_blank" class="explore-link link-search">🔍 Info</a>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -418,6 +693,52 @@
       <div class="food-section"><div class="section-label">Dinner</div>
         <div class="food-item"><div class="food-emoji">🦀</div><div><span class="food-name">Splash Café</span><span class="food-desc">Famous clam chowder bread bowl. 5 min walk. This is the move.</span></div></div>
         <div class="food-item"><div class="food-emoji">🍕</div><div><span class="food-name">Giuseppe's Cucina Italiana</span><span class="food-desc">Walkable Italian. Great family final night dinner.</span></div></div>
+
+      <div class="explore-section">
+        <div class="section-label">Things to explore</div>
+        <div class="explore-item">
+          <div class="explore-emoji">🌊</div>
+          <div class="explore-content">
+            <span class="explore-name">Pismo Beach Pier & Beach</span>
+            <span class="explore-desc">2 min walk from Sandcastle Hotel. Iconic wooden pier, wide sandy beach. Sunset here on arrival night is perfect.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Pismo+Beach+Pier" target="_blank" class="explore-link link-maps">📍 Maps</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🦋</div>
+          <div class="explore-content">
+            <span class="explore-name">Pismo Beach Monarch Butterfly Grove</span>
+            <span class="explore-desc">Thousands of monarch butterflies cluster in the eucalyptus trees Nov–Feb. Check if any remain in early April.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Pismo+Beach+Monarch+Butterfly+Grove" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Pismo+Beach+Monarch+butterflies+April" target="_blank" class="explore-link link-search">🔍 Check timing</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🍩</div>
+          <div class="explore-content">
+            <span class="explore-name">Old West Cinnamon Rolls</span>
+            <span class="explore-desc">Famous Pismo Beach institution on Price St. Open early. Legendary rolls — perfect final morning treat before home.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Old+West+Cinnamon+Rolls+Pismo+Beach" target="_blank" class="explore-link link-maps">📍 Maps</a>
+            </div>
+          </div>
+        </div>
+        <div class="explore-item">
+          <div class="explore-emoji">🏖️</div>
+          <div class="explore-content">
+            <span class="explore-name">Oceano Dunes — Drive on the Beach</span>
+            <span class="explore-desc">The only California beach where you can legally drive on the sand. Sprinter van on the beach — kids will never forget it.</span>
+            <div class="explore-links">
+              <a href="https://www.google.com/maps/search/Oceano+Dunes+State+Vehicular+Recreation+Area" target="_blank" class="explore-link link-maps">📍 Maps</a>
+              <a href="https://www.google.com/search?q=Oceano+Dunes+drive+on+beach+permit" target="_blank" class="explore-link link-search">🔍 Permit info</a>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
 
