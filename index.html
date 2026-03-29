@@ -228,6 +228,34 @@
   .link-search:hover { background:var(--sage); color:#fff; }
   .link-web:hover { background:#D35400; color:#fff; }
 
+  /* PHOTO CLUSTER GALLERY */
+  .cluster-pin { position:relative; cursor:pointer; }
+  .cluster-thumb { width:48px; height:48px; border-radius:10px; border:3px solid #fff; overflow:hidden; box-shadow:0 3px 10px rgba(0,0,0,.3); transition:transform .15s; }
+  .cluster-thumb:hover { transform:scale(1.12); }
+  .cluster-thumb img { width:100%; height:100%; object-fit:cover; }
+  .cluster-count { position:absolute; top:-8px; right:-8px; background:var(--rust); color:#fff; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:700; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.3); }
+
+  /* CLUSTER POPUP */
+  .cluster-popup { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9999; align-items:center; justify-content:center; padding:20px; }
+  .cluster-popup.open { display:flex; }
+  .cluster-popup-inner { background:#fff; border-radius:18px; overflow:hidden; max-width:420px; width:100%; max-height:90vh; display:flex; flex-direction:column; }
+  .cluster-popup-header { padding:14px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(44,62,80,.08); }
+  .cluster-popup-title { font-family:"Playfair Display",serif; font-size:1rem; font-weight:700; color:var(--dusk); }
+  .cluster-popup-close { width:30px; height:30px; background:var(--rust); border:none; border-radius:50%; color:#fff; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .cluster-main-photo { flex:1; overflow:hidden; position:relative; min-height:260px; background:#000; }
+  .cluster-main-photo img { width:100%; height:100%; object-fit:contain; max-height:340px; }
+  .cluster-nav { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#f8f8f8; }
+  .cluster-nav-btn { width:36px; height:36px; border-radius:50%; border:1.5px solid #ddd; background:#fff; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+  .cluster-nav-btn:hover { background:var(--rust); color:#fff; border-color:var(--rust); }
+  .cluster-nav-btn:disabled { opacity:.3; cursor:default; }
+  .cluster-counter { font-family:"DM Mono",monospace; font-size:.8rem; color:var(--warm-gray); font-weight:500; }
+  .cluster-caption { padding:8px 14px 14px; font-size:.76rem; color:var(--warm-gray); text-align:center; }
+  .cluster-strip { display:flex; gap:6px; padding:8px 14px; overflow-x:auto; scrollbar-width:none; background:#f8f8f8; border-top:1px solid rgba(44,62,80,.06); }
+  .cluster-strip::-webkit-scrollbar { display:none; }
+  .cluster-strip-thumb { width:44px; height:44px; border-radius:8px; overflow:hidden; flex-shrink:0; cursor:pointer; border:2px solid transparent; transition:border-color .15s; }
+  .cluster-strip-thumb.active { border-color:var(--rust); }
+  .cluster-strip-thumb img { width:100%; height:100%; object-fit:cover; }
+
   /* LOCATION PICKER MODAL */
   .loc-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:9997; align-items:flex-end; justify-content:center; }
   .loc-modal.open { display:flex; }
@@ -1044,6 +1072,26 @@
   <div id="photo-grid" class="photo-grid"></div>
 </div>
 
+<!-- CLUSTER PHOTO GALLERY POPUP -->
+<div class="cluster-popup" id="cluster-popup" onclick="closeCluster(event)">
+  <div class="cluster-popup-inner" onclick="event.stopPropagation()">
+    <div class="cluster-popup-header">
+      <div class="cluster-popup-title" id="cluster-title">Photos here</div>
+      <button class="cluster-popup-close" onclick="closeCluster()">✕</button>
+    </div>
+    <div class="cluster-main-photo">
+      <img id="cluster-main-img" src="" alt="">
+    </div>
+    <div class="cluster-nav">
+      <button class="cluster-nav-btn" id="cluster-prev" onclick="clusterNav(-1)">◀</button>
+      <span class="cluster-counter" id="cluster-counter">1 / 1</span>
+      <button class="cluster-nav-btn" id="cluster-next" onclick="clusterNav(1)">▶</button>
+    </div>
+    <div class="cluster-caption" id="cluster-caption"></div>
+    <div class="cluster-strip" id="cluster-strip"></div>
+  </div>
+</div>
+
 <!-- LOCATION PICKER MODAL -->
 <div class="loc-modal" id="loc-modal">
   <div class="loc-modal-inner">
@@ -1615,62 +1663,122 @@ async function loadPhotos() {
 }
 
 async function initPhotoMap(photos) {
-  // Init map if needed
   if (!photoMap) {
     photoMap = L.map('photo-map', {zoomControl:true, attributionControl:false}).setView([36.5,-112],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(photoMap);
-
-    // Draw the trip route on photo map too (same OSRM call)
     try {
       const all = routePoints.map(p => `${p.lng},${p.lat}`);
-      const seg1 = all.slice(0,6).join(';');
-      const seg2 = all.slice(5).join(';');
       const fetchSeg = async (coords) => {
         const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
         const json = await res.json();
         return json.routes?.[0]?.geometry?.coordinates || [];
       };
-      const [s1, s2] = await Promise.all([fetchSeg(seg1), fetchSeg(seg2)]);
+      const [s1, s2] = await Promise.all([fetchSeg(all.slice(0,6).join(';')), fetchSeg(all.slice(5).join(';'))]);
       const latlngs = [...s1,...s2].map(c=>[c[1],c[0]]);
       if (latlngs.length) L.polyline(latlngs,{color:'#C4622D',weight:3,opacity:.5}).addTo(photoMap);
     } catch(e) {}
-
-    // Add subtle stop markers
     routePoints.forEach((pt,i) => {
       const icon = L.divIcon({html:`<div style="background:#fff;border:1.5px solid #C4622D;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#C4622D;">${i+1}</div>`,className:'',iconSize:[18,18],iconAnchor:[9,9]});
       L.marker([pt.lat,pt.lng],{icon}).addTo(photoMap);
     });
   } else {
-    // Clear existing photo pins before re-adding
-    photoMap.eachLayer(layer => {
-      if (layer._isPhotoPin) photoMap.removeLayer(layer);
-    });
+    photoMap.eachLayer(layer => { if (layer._isPhotoPin) photoMap.removeLayer(layer); });
   }
 
-  // Add photo pins for photos with GPS
   const geoPhotos = photos.filter(p => p.lat && p.lng);
-  let bounds = [];
+  if (!geoPhotos.length) { setTimeout(() => photoMap.invalidateSize(), 100); return; }
 
-  geoPhotos.forEach(p => {
-    const icon = L.divIcon({
-      html: `<div class="photo-pin"><img src="${p.url}" alt=""/></div>`,
-      className: '',
-      iconSize: [44,44],
-      iconAnchor: [22,22]
-    });
-    const marker = L.marker([p.lat, p.lng], {icon}).addTo(photoMap);
-    marker._isPhotoPin = true;
-    marker.on('click', () => openLightbox(p.url, p.caption || ''));
-    bounds.push([p.lat, p.lng]);
+  // Cluster photos that are within ~500m of each other
+  const CLUSTER_RADIUS = 0.005; // degrees (~500m)
+  const clusters = [];
+  geoPhotos.forEach(photo => {
+    const existing = clusters.find(c =>
+      Math.abs(c.lat - photo.lat) < CLUSTER_RADIUS &&
+      Math.abs(c.lng - photo.lng) < CLUSTER_RADIUS
+    );
+    if (existing) {
+      existing.photos.push(photo);
+      // Update center to average of all photos in cluster
+      existing.lat = existing.photos.reduce((a,p) => a + p.lat, 0) / existing.photos.length;
+      existing.lng = existing.photos.reduce((a,p) => a + p.lng, 0) / existing.photos.length;
+    } else {
+      clusters.push({ lat: photo.lat, lng: photo.lng, photos: [photo] });
+    }
   });
 
-  // Fit map to show all photo pins if we have any
-  if (bounds.length > 0) {
-    photoMap.fitBounds(bounds, {padding:[40,40], maxZoom:10});
-  }
+  const bounds = [];
+  clusters.forEach(cluster => {
+    const count = cluster.photos.length;
+    const firstPhoto = cluster.photos[0];
+    const countBadge = count > 1 ? `<div class="cluster-count">${count}</div>` : '';
+    const icon = L.divIcon({
+      html: `<div class="cluster-pin">
+        <div class="cluster-thumb"><img src="${firstPhoto.url}" alt=""/></div>
+        ${countBadge}
+      </div>`,
+      className: '',
+      iconSize: [54, 54],
+      iconAnchor: [27, 27]
+    });
+    const marker = L.marker([cluster.lat, cluster.lng], {icon}).addTo(photoMap);
+    marker._isPhotoPin = true;
+    marker.on('click', () => {
+      if (count === 1) {
+        openLightbox(firstPhoto.url, firstPhoto.caption || '');
+      } else {
+        openCluster(cluster.photos);
+      }
+    });
+    bounds.push([cluster.lat, cluster.lng]);
+  });
 
-  // Invalidate size in case tab was hidden when map initialized
+  if (bounds.length) photoMap.fitBounds(bounds, {padding:[40,40], maxZoom:10});
   setTimeout(() => photoMap.invalidateSize(), 100);
+}
+
+// Cluster gallery state
+let clusterPhotos = [];
+let clusterIndex = 0;
+
+function openCluster(photos) {
+  clusterPhotos = photos;
+  clusterIndex = 0;
+  renderCluster();
+  document.getElementById('cluster-popup').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderCluster() {
+  const p = clusterPhotos[clusterIndex];
+  document.getElementById('cluster-main-img').src = p.url;
+  document.getElementById('cluster-caption').textContent = p.caption || '';
+  document.getElementById('cluster-counter').textContent = (clusterIndex+1) + ' / ' + clusterPhotos.length;
+  document.getElementById('cluster-title').textContent = clusterPhotos.length + ' photos here';
+  document.getElementById('cluster-prev').disabled = clusterIndex === 0;
+  document.getElementById('cluster-next').disabled = clusterIndex === clusterPhotos.length - 1;
+
+  // Thumbnail strip
+  document.getElementById('cluster-strip').innerHTML = clusterPhotos.map((p,i) =>
+    `<div class="cluster-strip-thumb ${i===clusterIndex?'active':''}" onclick="clusterGoto(${i})">
+      <img src="${p.url}" alt="">
+    </div>`
+  ).join('');
+}
+
+function clusterNav(dir) {
+  clusterIndex = Math.max(0, Math.min(clusterPhotos.length-1, clusterIndex+dir));
+  renderCluster();
+}
+
+function clusterGoto(index) {
+  clusterIndex = index;
+  renderCluster();
+}
+
+function closeCluster(e) {
+  if (e && e.target !== document.getElementById('cluster-popup')) return;
+  document.getElementById('cluster-popup').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 function openLightbox(url, caption) {
