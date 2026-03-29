@@ -184,6 +184,33 @@
   /* UPLOAD PROGRESS */
   .upload-progress { background:#fff; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:none; box-shadow:0 1px 6px rgba(44,62,80,.08); }
 
+  /* DELAY TRACKER */
+  .delay-tracker { margin:0 17px 14px; border-radius:12px; overflow:hidden; border:1.5px solid rgba(44,62,80,.1); }
+  .delay-header { padding:11px 14px; background:#f8f8f8; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; }
+  .delay-header-left { display:flex; align-items:center; gap:8px; }
+  .delay-label { font-size:.75rem; font-weight:600; color:var(--warm-gray); }
+  .delay-status { font-size:.72rem; font-weight:700; padding:3px 8px; border-radius:20px; }
+  .status-green { background:#e8f8ef; color:#1e8449; }
+  .status-yellow { background:#fef9e7; color:#d4ac0d; }
+  .status-red { background:#fdedec; color:var(--rust); }
+  .delay-body { padding:13px 14px; background:#fff; display:none; }
+  .delay-body.open { display:block; }
+  .delay-time-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .delay-time-label { font-size:.76rem; color:var(--warm-gray); font-weight:500; flex-shrink:0; }
+  .delay-time-input { font-family:"DM Mono",monospace; font-size:1rem; font-weight:500; color:var(--dusk); border:1.5px solid #ddd; border-radius:8px; padding:6px 10px; width:130px; background:#fff; }
+  .delay-time-input:focus { outline:none; border-color:var(--rust); }
+  .delay-result { border-radius:10px; padding:12px 14px; font-size:.78rem; line-height:1.7; }
+  .delay-result.green { background:#e8f8ef; color:#1a5632; }
+  .delay-result.yellow { background:#fef9e7; color:#7d6608; }
+  .delay-result.red { background:#fdedec; color:#922b21; }
+  .delay-result strong { display:block; font-size:.85rem; margin-bottom:4px; }
+  .delay-skip { margin-top:8px; padding-top:8px; border-top:1px solid rgba(0,0,0,.08); }
+  .delay-skip-title { font-weight:700; display:block; margin-bottom:4px; }
+  .delay-recalc { margin-top:8px; padding-top:8px; border-top:1px solid rgba(0,0,0,.08); }
+  .recalc-item { display:flex; gap:8px; padding:3px 0; font-size:.74rem; }
+  .recalc-time { font-family:"DM Mono",monospace; min-width:55px; flex-shrink:0; opacity:.7; }
+  .recalc-skipped { text-decoration:line-through; opacity:.45; }
+
   /* EXPLORE SECTION */
   .explore-section { padding:0 17px 14px; }
   .explore-item { display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid rgba(44,62,80,.05); }
@@ -304,6 +331,23 @@
     <div class="day-card active" data-day="1">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 1 of 8</span><div class="day-title">El Dorado Hills → Paso Robles</div><div class="day-date">Saturday, March 30</div></div><span class="day-badge badge-drive">Drive Day</span></div>
       <div class="today-depart"><div class="icon">🚐</div><div><h4>Leave by 7:00 AM</h4><p>Arrive Paso Robles ~11:30 AM</p></div></div>
+      <div class="delay-tracker" id="tracker-day1">
+        <div class="delay-header" onclick="toggleTracker(1)">
+          <div class="delay-header-left">
+            <span style="font-size:1.1rem">⏱️</span>
+            <span class="delay-label">Running late? Tap to recalculate</span>
+          </div>
+          <span class="delay-status status-green" id="tracker-status-1">On Track</span>
+        </div>
+        <div class="delay-body" id="tracker-body-1">
+          <div class="delay-time-row">
+            <span class="delay-time-label">We left at:</span>
+            <input type="time" class="delay-time-input" id="actual-depart-1" onchange="recalcDay(1)"/>
+            <span class="delay-time-label" style="font-size:.68rem;color:var(--rust)">Target: <span id="target-time-1"></span></span>
+          </div>
+          <div id="delay-result-1"></div>
+        </div>
+      </div>
       <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">265</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">~4h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~11:30 AM</span><span class="drive-stat-lbl">arrive</span></div></div>
       <div class="schedule">
         <div class="sched-item"><span class="sched-time">7:00 AM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart El Dorado Hills</span><span class="sched-detail">Tank full, snacks loaded. US-50 W → I-5 S → CA-46 W.</span></div></div>
@@ -383,6 +427,23 @@
     <div class="day-card" data-day="2">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 2 of 8</span><div class="day-title">Paso Robles → Sedona</div><div class="day-date">Sunday, March 31 — Longest Drive</div></div><span class="day-badge badge-drive">Long Drive</span></div>
       <div class="today-depart"><div class="icon">⚠️</div><div><h4>Leave by 6:30 AM — No Exceptions</h4><p>9–9.5 hrs total. Early start = red rock sunset arrival.</p></div></div>
+      <div class="delay-tracker" id="tracker-day2">
+        <div class="delay-header" onclick="toggleTracker(2)">
+          <div class="delay-header-left">
+            <span style="font-size:1.1rem">⏱️</span>
+            <span class="delay-label">Running late? Tap to recalculate</span>
+          </div>
+          <span class="delay-status status-green" id="tracker-status-2">On Track</span>
+        </div>
+        <div class="delay-body" id="tracker-body-2">
+          <div class="delay-time-row">
+            <span class="delay-time-label">We left at:</span>
+            <input type="time" class="delay-time-input" id="actual-depart-2" onchange="recalcDay(2)"/>
+            <span class="delay-time-label" style="font-size:.68rem;color:var(--rust)">Target: <span id="target-time-2"></span></span>
+          </div>
+          <div id="delay-result-2"></div>
+        </div>
+      </div>
       <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">590</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">~9h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~4 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
       <div class="schedule">
         <div class="sched-item"><span class="sched-time">6:30 AM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart Paso Robles</span><span class="sched-detail">US-101 S → CA-46 E → I-40 E. Grab drive-thru breakfast.</span></div></div>
@@ -463,6 +524,23 @@
     <div class="day-card" data-day="3">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 3 of 8</span><div class="day-title">Sedona Morning → Buckeye</div><div class="day-date">Monday, April 1 — Easy Day</div></div><span class="day-badge badge-explore">Short Drive</span></div>
       <div class="today-depart"><div class="icon">🌄</div><div><h4>Leave by 11:00 AM</h4><p>Only 2 hrs to Buckeye — enjoy Sedona morning first!</p></div></div>
+      <div class="delay-tracker" id="tracker-day3">
+        <div class="delay-header" onclick="toggleTracker(3)">
+          <div class="delay-header-left">
+            <span style="font-size:1.1rem">⏱️</span>
+            <span class="delay-label">Running late? Tap to recalculate</span>
+          </div>
+          <span class="delay-status status-green" id="tracker-status-3">On Track</span>
+        </div>
+        <div class="delay-body" id="tracker-body-3">
+          <div class="delay-time-row">
+            <span class="delay-time-label">We left at:</span>
+            <input type="time" class="delay-time-input" id="actual-depart-3" onchange="recalcDay(3)"/>
+            <span class="delay-time-label" style="font-size:.68rem;color:var(--rust)">Target: <span id="target-time-3"></span></span>
+          </div>
+          <div id="delay-result-3"></div>
+        </div>
+      </div>
       <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">115</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">~2h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~1 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
       <div class="schedule">
         <div class="sched-item"><span class="sched-time">7:30 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">☕ Breakfast + Morning Light</span><span class="sched-detail">Morning in Sedona is magical — warm red rock glow.</span><span class="sched-tag tag-photo">golden hour</span></div></div>
@@ -477,6 +555,23 @@
     <div class="day-card" data-day="4">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 4 of 8</span><div class="day-title">Buckeye → Grand Canyon</div><div class="day-date">Tuesday, April 2</div></div><span class="day-badge badge-drive">Drive Day</span></div>
       <div class="today-depart"><div class="icon">🏔️</div><div><h4>Leave by 9:00 AM</h4><p>Arrive Grand Canyon ~1 PM — full afternoon on the rim</p></div></div>
+      <div class="delay-tracker" id="tracker-day4">
+        <div class="delay-header" onclick="toggleTracker(4)">
+          <div class="delay-header-left">
+            <span style="font-size:1.1rem">⏱️</span>
+            <span class="delay-label">Running late? Tap to recalculate</span>
+          </div>
+          <span class="delay-status status-green" id="tracker-status-4">On Track</span>
+        </div>
+        <div class="delay-body" id="tracker-body-4">
+          <div class="delay-time-row">
+            <span class="delay-time-label">We left at:</span>
+            <input type="time" class="delay-time-input" id="actual-depart-4" onchange="recalcDay(4)"/>
+            <span class="delay-time-label" style="font-size:.68rem;color:var(--rust)">Target: <span id="target-time-4"></span></span>
+          </div>
+          <div id="delay-result-4"></div>
+        </div>
+      </div>
       <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">230</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">3.5h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~1 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
       <div class="schedule">
         <div class="sched-item"><span class="sched-time">9:00 AM</span><div class="sched-dot dot-depart"></div><div class="sched-content"><span class="sched-label">🚐 Depart Buckeye</span><span class="sched-detail">I-10 E → AZ-89 N → AZ-64 N into the park.</span></div></div>
@@ -544,6 +639,23 @@
     <div class="day-card" data-day="5">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 5 of 8</span><div class="day-title">Grand Canyon → Zion</div><div class="day-date">Wednesday, April 3</div></div><span class="day-badge badge-drive">Drive Day</span></div>
       <div class="today-depart"><div class="icon">🌅</div><div><h4>Morning at rim, leave by 10:00 AM</h4><p>5 hrs to Zion — optional sunrise first</p></div></div>
+      <div class="delay-tracker" id="tracker-day5">
+        <div class="delay-header" onclick="toggleTracker(5)">
+          <div class="delay-header-left">
+            <span style="font-size:1.1rem">⏱️</span>
+            <span class="delay-label">Running late? Tap to recalculate</span>
+          </div>
+          <span class="delay-status status-green" id="tracker-status-5">On Track</span>
+        </div>
+        <div class="delay-body" id="tracker-body-5">
+          <div class="delay-time-row">
+            <span class="delay-time-label">We left at:</span>
+            <input type="time" class="delay-time-input" id="actual-depart-5" onchange="recalcDay(5)"/>
+            <span class="delay-time-label" style="font-size:.68rem;color:var(--rust)">Target: <span id="target-time-5"></span></span>
+          </div>
+          <div id="delay-result-5"></div>
+        </div>
+      </div>
       <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">175</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">~5h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~3 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
       <div class="schedule">
         <div class="sched-item"><span class="sched-time">6:15 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🌄 Optional Sunrise — Mather Point</span><span class="sched-detail">Totally different light than yesterday. 15 min walk from lodge.</span><span class="sched-tag tag-photo">sunrise</span></div></div>
@@ -611,6 +723,23 @@
     <div class="day-card" data-day="6">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 6 of 8</span><div class="day-title">Zion + Scenic Byway 12 → Capitol Reef</div><div class="day-date">Thursday, April 4</div></div><span class="day-badge badge-explore">Scenic Day</span></div>
       <div class="today-depart"><div class="icon">🚌</div><div><h4>Shuttle at 7:00 AM, leave hotel by noon</h4><p>Morning in Zion, afternoon on the best drive in America</p></div></div>
+      <div class="delay-tracker" id="tracker-day6">
+        <div class="delay-header" onclick="toggleTracker(6)">
+          <div class="delay-header-left">
+            <span style="font-size:1.1rem">⏱️</span>
+            <span class="delay-label">Running late? Tap to recalculate</span>
+          </div>
+          <span class="delay-status status-green" id="tracker-status-6">On Track</span>
+        </div>
+        <div class="delay-body" id="tracker-body-6">
+          <div class="delay-time-row">
+            <span class="delay-time-label">We left at:</span>
+            <input type="time" class="delay-time-input" id="actual-depart-6" onchange="recalcDay(6)"/>
+            <span class="delay-time-label" style="font-size:.68rem;color:var(--rust)">Target: <span id="target-time-6"></span></span>
+          </div>
+          <div id="delay-result-6"></div>
+        </div>
+      </div>
       <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">155</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">4.5h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~5 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
       <div class="schedule">
         <div class="sched-item"><span class="sched-time">7:00 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🚌 Early Shuttle into Zion Canyon</span><span class="sched-detail">Fewer crowds. Ride to Temple of Sinawava (last stop).</span></div></div>
@@ -679,6 +808,23 @@
     <div class="day-card" data-day="7">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 7 of 8</span><div class="day-title">Capitol Reef → Pismo Beach</div><div class="day-date">Friday, April 5 — Long Return</div></div><span class="day-badge badge-drive">Long Drive</span></div>
       <div class="today-depart"><div class="icon">⚠️</div><div><h4>Leave by 7:00 AM</h4><p>9+ hrs to Pismo. Early start = beach sunset.</p></div></div>
+      <div class="delay-tracker" id="tracker-day7">
+        <div class="delay-header" onclick="toggleTracker(7)">
+          <div class="delay-header-left">
+            <span style="font-size:1.1rem">⏱️</span>
+            <span class="delay-label">Running late? Tap to recalculate</span>
+          </div>
+          <span class="delay-status status-green" id="tracker-status-7">On Track</span>
+        </div>
+        <div class="delay-body" id="tracker-body-7">
+          <div class="delay-time-row">
+            <span class="delay-time-label">We left at:</span>
+            <input type="time" class="delay-time-input" id="actual-depart-7" onchange="recalcDay(7)"/>
+            <span class="delay-time-label" style="font-size:.68rem;color:var(--rust)">Target: <span id="target-time-7"></span></span>
+          </div>
+          <div id="delay-result-7"></div>
+        </div>
+      </div>
       <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">580</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">~9h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~5 PM</span><span class="drive-stat-lbl">arrive</span></div></div>
       <div class="schedule">
         <div class="sched-item"><span class="sched-time">6:30 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🍑 Fruita Orchards Sunrise Walk</span><span class="sched-detail">5 min from hotel. Sunrise through cottonwoods. 20 min, magical.</span><span class="sched-tag tag-photo">sunrise</span></div></div>
@@ -746,6 +892,23 @@
     <div class="day-card" data-day="8">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 8 of 8</span><div class="day-title">Pismo Beach → Home 🎉</div><div class="day-date">Saturday, April 6</div></div><span class="day-badge badge-home">Home Day</span></div>
       <div class="today-depart"><div class="icon">🏠</div><div><h4>Leave by 9:00 AM</h4><p>Home by 3 PM — easy final stretch</p></div></div>
+      <div class="delay-tracker" id="tracker-day8">
+        <div class="delay-header" onclick="toggleTracker(8)">
+          <div class="delay-header-left">
+            <span style="font-size:1.1rem">⏱️</span>
+            <span class="delay-label">Running late? Tap to recalculate</span>
+          </div>
+          <span class="delay-status status-green" id="tracker-status-8">On Track</span>
+        </div>
+        <div class="delay-body" id="tracker-body-8">
+          <div class="delay-time-row">
+            <span class="delay-time-label">We left at:</span>
+            <input type="time" class="delay-time-input" id="actual-depart-8" onchange="recalcDay(8)"/>
+            <span class="delay-time-label" style="font-size:.68rem;color:var(--rust)">Target: <span id="target-time-8"></span></span>
+          </div>
+          <div id="delay-result-8"></div>
+        </div>
+      </div>
       <div class="drive-summary"><div class="drive-stat"><span class="drive-stat-num">220</span><span class="drive-stat-lbl">miles</span></div><div class="drive-stat"><span class="drive-stat-num">5.5h</span><span class="drive-stat-lbl">drive</span></div><div class="drive-stat"><span class="drive-stat-num">~3 PM</span><span class="drive-stat-lbl">home!</span></div></div>
       <div class="schedule">
         <div class="sched-item"><span class="sched-time">7:30 AM</span><div class="sched-dot dot-activity"></div><div class="sched-content"><span class="sched-label">🌊 Morning Beach Walk</span><span class="sched-detail">Kids collect shells. Leone family photo. Last Pacific moment.</span><span class="sched-tag tag-photo">final shot</span></div></div>
@@ -1695,6 +1858,91 @@ function copyTvLink() {
     btn.textContent = '✓ Copied!';
     setTimeout(() => btn.textContent = 'Copy Link', 2000);
   }).catch(() => prompt('Copy this TV link:', url));
+}
+
+const driveSchedules = [{"day": 1, "target": "07:00", "drive_hours": 4.0, "destination": "Paso Robles", "stops": [{"time": "09:00", "label": "\u26fd Gas \u2014 Coalinga", "skippable": false, "duration": 0.5}, {"time": "11:00", "label": "\ud83d\udcf8 Cuesta Grade Vista Point", "skippable": true, "duration": 0.25}, {"time": "11:45", "label": "\ud83c\udfe8 Arrive Allegretto Resort", "skippable": false, "duration": 0}], "buffer_msg_yellow": "Skip Cuesta Grade stop \u2014 still arrive before check-in.", "buffer_msg_red": "Drive straight through. Arrive late afternoon \u2014 still a great first night."}, {"day": 2, "target": "06:30", "drive_hours": 9.0, "destination": "Sedona", "stops": [{"time": "09:00", "label": "\u26fd Gas \u2014 Barstow", "skippable": false, "duration": 0.5}, {"time": "10:30", "label": "\ud83d\udcf8 Mojave Desert pulloff", "skippable": true, "duration": 0.25}, {"time": "12:30", "label": "\ud83c\udf54 Lunch \u2014 Kingman", "skippable": false, "duration": 0.5}, {"time": "16:00", "label": "\ud83d\udcf8 Airport Mesa Overlook", "skippable": true, "duration": 0.25}, {"time": "16:30", "label": "\ud83c\udfe8 Check in Sedona", "skippable": false, "duration": 0}, {"time": "19:00", "label": "\ud83c\udf05 Cathedral Rock Sunset", "skippable": true, "duration": 0.5}], "buffer_msg_yellow": "Skip Mojave pulloff. Still hit sunset at Cathedral Rock.", "buffer_msg_red": "Skip all scenic stops. Drive straight \u2014 still arrive in time for dinner."}, {"day": 3, "target": "11:00", "drive_hours": 2.0, "destination": "Buckeye", "stops": [{"time": "08:30", "label": "\ud83e\udd7e Bell Rock Trail", "skippable": true, "duration": 1.0}, {"time": "13:00", "label": "\ud83c\udfe0 Arrive Buckeye", "skippable": false, "duration": 0}], "buffer_msg_yellow": "Shorten Bell Rock to 30 min \u2014 still worth a quick stop.", "buffer_msg_red": "Skip Bell Rock \u2014 short drive means you still arrive at a reasonable time."}, {"day": 4, "target": "09:00", "drive_hours": 3.5, "destination": "Grand Canyon", "stops": [{"time": "10:30", "label": "\u26fd Gas \u2014 Williams, AZ", "skippable": false, "duration": 0.5}, {"time": "12:30", "label": "\ud83c\udf9f\ufe0f Park Entrance", "skippable": false, "duration": 0.25}, {"time": "13:30", "label": "\ud83d\ude2e Mather Point \u2014 First Look", "skippable": false, "duration": 0.75}, {"time": "17:00", "label": "\ud83c\udf96\ufe0f Junior Ranger Program", "skippable": true, "duration": 1.0}, {"time": "19:15", "label": "\ud83c\udf05 Hopi Point Sunset", "skippable": true, "duration": 0.75}], "buffer_msg_yellow": "Still catch Mather Point and sunset. Do Junior Ranger tomorrow morning.", "buffer_msg_red": "Skip Junior Ranger today \u2014 do it tomorrow AM before leaving. Prioritize sunset."}, {"day": 5, "target": "10:00", "drive_hours": 5.0, "destination": "Zion / Springdale", "stops": [{"time": "06:15", "label": "\ud83c\udf04 Sunrise \u2014 Mather Point", "skippable": true, "duration": 0.5}, {"time": "08:00", "label": "\ud83d\uddfc Desert View Watchtower", "skippable": true, "duration": 0.75}, {"time": "12:30", "label": "\ud83e\udd6a Lunch \u2014 Kanab", "skippable": false, "duration": 0.5}, {"time": "13:15", "label": "\ud83d\udcf8 Zion Tunnel View stop", "skippable": true, "duration": 0.25}, {"time": "15:00", "label": "\ud83c\udfe8 Check in Springdale", "skippable": false, "duration": 0}], "buffer_msg_yellow": "Skip Desert View Watchtower \u2014 drive straight to Zion.", "buffer_msg_red": "Skip Watchtower and tunnel view. Drive straight \u2014 arriving by 5-6pm is fine."}, {"day": 6, "target": "12:00", "drive_hours": 4.5, "destination": "Capitol Reef", "stops": [{"time": "07:00", "label": "\ud83d\ude8c Zion early shuttle + Narrows", "skippable": true, "duration": 2.5}, {"time": "13:30", "label": "\ud83d\udcf8 Red Canyon pulloff", "skippable": true, "duration": 0.25}, {"time": "14:30", "label": "\ud83d\udcf8 Hogback Ridge", "skippable": true, "duration": 0.25}, {"time": "16:30", "label": "\ud83c\udfe8 Arrive Capitol Reef Resort", "skippable": false, "duration": 0}], "buffer_msg_yellow": "Still hit both byway stops \u2014 they are quick pulloffs.", "buffer_msg_red": "Skip Red Canyon and Hogback \u2014 drive straight. Do Capitol Reef Scenic Drive before dinner."}, {"day": 7, "target": "07:00", "drive_hours": 9.0, "destination": "Pismo Beach", "stops": [{"time": "06:30", "label": "\ud83c\udf51 Fruita Orchards sunrise walk", "skippable": true, "duration": 0.33}, {"time": "10:00", "label": "\u26fd Gas \u2014 Green River, UT", "skippable": false, "duration": 0.5}, {"time": "12:30", "label": "\ud83c\udf54 Lunch \u2014 Henderson/Boulder City", "skippable": false, "duration": 0.5}, {"time": "14:30", "label": "\ud83d\udcf8 Wind Turbines \u2014 Tehachapi", "skippable": true, "duration": 0.25}, {"time": "17:00", "label": "\ud83c\udf0a Arrive Pismo Beach", "skippable": false, "duration": 0}, {"time": "19:00", "label": "\ud83c\udf05 Sunset at Pismo Pier", "skippable": true, "duration": 0.5}], "buffer_msg_yellow": "Skip orchards and turbines. Still arrive for beach sunset.", "buffer_msg_red": "Drive straight with gas and lunch only. Arrive evening \u2014 beach walk tomorrow instead."}, {"day": 8, "target": "09:00", "drive_hours": 5.5, "destination": "El Dorado Hills", "stops": [{"time": "07:30", "label": "\ud83c\udf0a Morning beach walk", "skippable": true, "duration": 0.75}, {"time": "08:30", "label": "\u2615 Old West Cinnamon Rolls", "skippable": true, "duration": 0.5}, {"time": "11:30", "label": "\u26fd Gas \u2014 Coalinga", "skippable": false, "duration": 0.33}, {"time": "14:30", "label": "\ud83c\udfe0 Home \u2014 El Dorado Hills", "skippable": false, "duration": 0}], "buffer_msg_yellow": "Skip cinnamon rolls \u2014 grab drive-thru instead. Home by 4pm.", "buffer_msg_red": "Skip beach walk and rolls \u2014 drive straight. Home by late afternoon either way."}];
+
+// ===== DELAY TRACKER =====
+function toggleTracker(day) {
+  const body = document.getElementById('tracker-body-' + day);
+  body.classList.toggle('open');
+  const sched = driveSchedules.find(d => d.day === day);
+  if (sched) {
+    const el = document.getElementById('target-time-' + day);
+    if (el) {
+      const [h, m] = sched.target.split(':');
+      const ampm = parseInt(h) >= 12 ? 'PM' : 'AM';
+      const h12 = parseInt(h) % 12 || 12;
+      el.textContent = h12 + ':' + m + ' ' + ampm;
+    }
+  }
+}
+
+function recalcDay(day) {
+  const sched = driveSchedules.find(d => d.day === day);
+  if (!sched) return;
+  const input = document.getElementById('actual-depart-' + day);
+  const actualTime = input.value;
+  if (!actualTime) return;
+
+  const toMins = (t) => { const [h,m] = t.split(':').map(Number); return h*60+m; };
+  const toStr = (mins) => {
+    mins = ((mins % 1440) + 1440) % 1440;
+    const h = Math.floor(mins/60); const m = mins%60;
+    const ampm = h>=12?'PM':'AM'; const h12 = h%12||12;
+    return h12+':'+(m<10?'0':'')+m+' '+ampm;
+  };
+
+  const targetMins = toMins(sched.target);
+  const actualMins = toMins(actualTime);
+  const delayMins = actualMins - targetMins;
+
+  const requiredStopMins = sched.stops.filter(s=>!s.skippable).reduce((a,s)=>a+s.duration*60,0);
+  const totalDriveMins = sched.drive_hours*60 + requiredStopMins;
+  const newArrivalMins = actualMins + totalDriveMins;
+  const origArrivalMins = targetMins + totalDriveMins;
+
+  let status, statusClass, resultClass;
+  if (delayMins <= 30) { status='🟢 On Track'; statusClass='status-green'; resultClass='green'; }
+  else if (delayMins <= 90) { status='🟡 Running Late'; statusClass='status-yellow'; resultClass='yellow'; }
+  else { status='🔴 Significantly Late'; statusClass='status-red'; resultClass='red'; }
+
+  const statusEl = document.getElementById('tracker-status-' + day);
+  statusEl.textContent = status;
+  statusEl.className = 'delay-status ' + statusClass;
+
+  const delayText = delayMins <= 0
+    ? "You're right on time! 🎉"
+    : `Leaving ${delayMins} min late. New arrival: <strong>${toStr(newArrivalMins)}</strong> (was ${toStr(origArrivalMins)}).`;
+
+  const skipHTML = delayMins > 30 ? `
+    <div class="delay-skip">
+      <span class="delay-skip-title">✂️ What to cut:</span>
+      ${delayMins <= 90 ? sched.buffer_msg_yellow : sched.buffer_msg_red}
+    </div>` : '';
+
+  const recalcHTML = `
+    <div class="delay-recalc">
+      <span class="delay-skip-title">📋 Updated schedule:</span>
+      ${sched.stops.map(s => {
+        const [sh, sm] = s.time.split(':').map(Number);
+        const origMins = sh*60+sm;
+        const newMins = origMins + delayMins;
+        const skip = s.skippable && delayMins > 90;
+        return '<div class="recalc-item"><span class="recalc-time">' + toStr(newMins) + '</span>'
+          + '<span class="' + (skip?'recalc-skipped':'') + '">' + s.label + (skip?' — SKIP':'') + '</span></div>';
+      }).join('')}
+      <div class="recalc-item" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.1);font-weight:700;">
+        <span class="recalc-time">${toStr(newArrivalMins)}</span>
+        <span>🏁 Arrive ${sched.destination}</span>
+      </div>
+    </div>`;
+
+  document.getElementById('delay-result-' + day).innerHTML =
+    '<div class="delay-result ' + resultClass + '">'
+    + '<strong>' + status + '</strong>'
+    + delayText + skipHTML + recalcHTML
+    + '</div>';
 }
 
 // ===== TV MODE =====
