@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🚐 Leone GPS Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:#0a0f1a;
+    font-family: -apple-system, 'DM Sans', sans-serif;
+    color:#fff;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    text-align:center;
+  }
+
+  .van { font-size:4rem; margin-bottom:16px; animation: drive 3s ease-in-out infinite; }
+  @keyframes drive {
+    0%,100% { transform:translateX(-6px); }
+    50% { transform:translateX(6px); }
+  }
+
+  h1 { font-size:1.4rem; font-weight:700; color:#F5EDD8; margin-bottom:6px; }
+  .sub { font-size:.82rem; color:rgba(255,255,255,.45); margin-bottom:32px; }
+
+  .status-card {
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:16px;
+    padding:20px 24px;
+    width:100%;
+    max-width:340px;
+    margin-bottom:16px;
+  }
+
+  .status-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 0;
+    border-bottom:1px solid rgba(255,255,255,.06);
+    font-size:.82rem;
+  }
+  .status-row:last-child { border-bottom:none; }
+  .status-label { color:rgba(255,255,255,.5); }
+  .status-value { font-weight:600; color:#fff; }
+  .status-value.green { color:#2ecc71; }
+  .status-value.red { color:#e74c3c; }
+  .status-value.yellow { color:#f39c12; }
+
+  .pulse-dot {
+    width:10px; height:10px; border-radius:50%;
+    background:#2ecc71;
+    display:inline-block;
+    margin-right:6px;
+    animation:pulse 1.5s infinite;
+  }
+  .pulse-dot.off { background:#e74c3c; animation:none; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+
+  .start-btn {
+    width:100%;
+    max-width:340px;
+    padding:16px;
+    background:#C4622D;
+    color:#fff;
+    border:none;
+    border-radius:14px;
+    font-size:1rem;
+    font-weight:700;
+    cursor:pointer;
+    margin-bottom:12px;
+    transition:all .2s;
+    letter-spacing:.02em;
+  }
+  .start-btn:active { transform:scale(.97); }
+  .start-btn.active { background:#27AE60; }
+  .start-btn.active::before { content:'⏹ '; }
+
+  .tip {
+    font-size:.72rem;
+    color:rgba(255,255,255,.3);
+    max-width:300px;
+    line-height:1.6;
+    margin-top:8px;
+  }
+
+  .log {
+    width:100%;
+    max-width:340px;
+    margin-top:16px;
+    background:rgba(255,255,255,.04);
+    border-radius:12px;
+    padding:12px 14px;
+    text-align:left;
+    max-height:140px;
+    overflow-y:auto;
+  }
+  .log-entry {
+    font-size:.68rem;
+    color:rgba(255,255,255,.35);
+    font-family:'DM Mono', monospace;
+    padding:2px 0;
+    border-bottom:1px solid rgba(255,255,255,.04);
+  }
+  .log-entry:last-child { border-bottom:none; }
+  .log-entry.ok { color:#27AE60; }
+  .log-entry.err { color:#e74c3c; }
+
+  .back-link {
+    margin-top:24px;
+    color:rgba(255,255,255,.3);
+    font-size:.76rem;
+    text-decoration:none;
+  }
+  .back-link:hover { color:rgba(255,255,255,.6); }
+</style>
+</head>
+<body>
+
+<div class="van">🚐</div>
+<h1>Leone Family GPS</h1>
+<p class="sub">Background location tracker</p>
+
+<div class="status-card">
+  <div class="status-row">
+    <span class="status-label">GPS Status</span>
+    <span class="status-value" id="gps-status">Not started</span>
+  </div>
+  <div class="status-row">
+    <span class="status-label">Wake Lock</span>
+    <span class="status-value" id="wake-status">Inactive</span>
+  </div>
+  <div class="status-row">
+    <span class="status-label">Last Update</span>
+    <span class="status-value" id="last-update">—</span>
+  </div>
+  <div class="status-row">
+    <span class="status-label">Coordinates</span>
+    <span class="status-value" id="coords">—</span>
+  </div>
+  <div class="status-row">
+    <span class="status-label">Updates Sent</span>
+    <span class="status-value" id="update-count">0</span>
+  </div>
+</div>
+
+<button class="start-btn" id="start-btn" onclick="toggleTracking()">
+  📍 Start GPS Tracking
+</button>
+
+<p class="tip">
+  Keep this tab open while driving.<br>
+  Plug your phone in — screen can stay on or off.<br>
+  The van dot updates on the trip map every 30 seconds.
+</p>
+
+<div class="log" id="log"></div>
+
+<a href="/" class="back-link">← Back to trip site</a>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://mzwkurrpzjwaxjwutfhd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16d2t1cnJwemp3YXhqd3V0ZmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDUyMzEsImV4cCI6MjA5MDIyMTIzMX0.KeBzQEDpkoXu3szws9jHbN710pHlTYwqHAqalzyNL4U'
+);
+
+let isTracking = false;
+let wakeLock = null;
+let gpsInterval = null;
+let updateCount = 0;
+let watchId = null;
+
+function log(msg, type='') {
+  const div = document.getElementById('log');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  const time = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'});
+  entry.textContent = time + ' — ' + msg;
+  div.insertBefore(entry, div.firstChild);
+  // Keep last 20 entries
+  while (div.children.length > 20) div.removeChild(div.lastChild);
+}
+
+function setStatus(id, text, cls) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'status-value ' + (cls||'');
+}
+
+async function acquireWakeLock() {
+  if ('wakeLock' in navigator) {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      setStatus('wake-status', '✅ Active', 'green');
+      log('Wake lock acquired — screen will stay on', 'ok');
+      wakeLock.addEventListener('release', () => {
+        setStatus('wake-status', '⚠️ Released', 'yellow');
+        log('Wake lock released — re-acquiring...', 'err');
+        // Re-acquire if still tracking
+        if (isTracking) setTimeout(acquireWakeLock, 1000);
+      });
+    } catch(e) {
+      setStatus('wake-status', '⚠️ Unavailable', 'yellow');
+      log('Wake lock not available: ' + e.message);
+    }
+  } else {
+    setStatus('wake-status', '❌ Not supported', 'red');
+    log('Wake Lock API not supported on this browser');
+  }
+}
+
+async function saveLocation(lat, lng, accuracy) {
+  const timeStr = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  const { data: existing } = await sb.from('trip_state').select('id').eq('key','gps_location').maybeSingle();
+  const payload = { key:'gps_location', value: JSON.stringify({lat, lng, time:timeStr, accuracy}) };
+  let error;
+  if (existing) {
+    ({ error } = await sb.from('trip_state').update({value: payload.value}).eq('key','gps_location'));
+  } else {
+    ({ error } = await sb.from('trip_state').insert(payload));
+  }
+  if (error) {
+    log('Save failed: ' + error.message, 'err');
+    return false;
+  }
+  updateCount++;
+  document.getElementById('update-count').textContent = updateCount;
+  document.getElementById('last-update').textContent = timeStr;
+  document.getElementById('coords').textContent = lat.toFixed(4) + ', ' + lng.toFixed(4);
+  log('📍 Saved: ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ' (±' + Math.round(accuracy) + 'm)', 'ok');
+  return true;
+}
+
+function getCurrentPosition() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 10000
+    });
+  });
+}
+
+async function doGPSUpdate() {
+  try {
+    setStatus('gps-status', '⏳ Getting GPS...', 'yellow');
+    const pos = await getCurrentPosition();
+    setStatus('gps-status', '✅ Active', 'green');
+    await saveLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+  } catch(e) {
+    const msgs = {1:'Permission denied',2:'Position unavailable',3:'Timeout'};
+    const msg = msgs[e.code] || e.message;
+    setStatus('gps-status', '❌ ' + msg, 'red');
+    log('GPS error: ' + msg, 'err');
+  }
+}
+
+async function toggleTracking() {
+  if (!isTracking) {
+    // Start tracking
+    if (!navigator.geolocation) {
+      alert('Geolocation not supported on this device.');
+      return;
+    }
+
+    isTracking = true;
+    const btn = document.getElementById('start-btn');
+    btn.textContent = '⏹ Stop Tracking';
+    btn.classList.add('active');
+
+    log('Starting GPS tracking...', 'ok');
+
+    // Acquire wake lock to prevent screen/tab suspension
+    await acquireWakeLock();
+
+    // First immediate update
+    await doGPSUpdate();
+
+    // Then every 30 seconds
+    gpsInterval = setInterval(doGPSUpdate, 30000);
+
+    // Also use watchPosition as backup for movement detection
+    watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        // Only save if moved more than 50 meters
+        const lastVal = await sb.from('trip_state').select('value').eq('key','gps_location').maybeSingle();
+        if (lastVal?.data?.value) {
+          const last = JSON.parse(lastVal.data.value);
+          const dist = Math.sqrt(Math.pow(pos.coords.latitude - last.lat, 2) + Math.pow(pos.coords.longitude - last.lng, 2)) * 111000;
+          if (dist > 50) {
+            log('Movement detected (' + Math.round(dist) + 'm) — updating');
+            await saveLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+          }
+        }
+      },
+      null,
+      { enableHighAccuracy: true, maximumAge: 5000 }
+    );
+
+  } else {
+    // Stop tracking
+    isTracking = false;
+    clearInterval(gpsInterval);
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    if (wakeLock) { wakeLock.release(); wakeLock = null; }
+
+    const btn = document.getElementById('start-btn');
+    btn.textContent = '📍 Start GPS Tracking';
+    btn.classList.remove('active');
+
+    setStatus('gps-status', 'Stopped', '');
+    setStatus('wake-status', 'Inactive', '');
+    log('Tracking stopped');
+  }
+}
+
+// Re-acquire wake lock when page becomes visible again
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && isTracking) {
+    log('Page visible again — checking wake lock');
+    if (!wakeLock || wakeLock.released) {
+      await acquireWakeLock();
+    }
+    // Immediate GPS update when coming back
+    await doGPSUpdate();
+  }
+});
+
+// Handle page unload
+window.addEventListener('beforeunload', () => {
+  if (wakeLock) wakeLock.release();
+});
+
+log('Ready — tap Start to begin tracking');
+</script>
+</body>
+</html>
