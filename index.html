@@ -184,6 +184,13 @@
   /* UPLOAD PROGRESS */
   .upload-progress { background:#fff; border-radius:10px; padding:12px 15px; margin-bottom:10px; display:none; box-shadow:0 1px 6px rgba(44,62,80,.08); }
 
+  /* MAPS LINK */
+  .maps-link { display:flex; align-items:center; gap:7px; margin:0 17px 14px; padding:10px 14px; background:#E8F4FD; border-radius:10px; text-decoration:none; border:1px solid rgba(74,144,164,.2); transition:all .15s; }
+  .maps-link:hover { background:#D1EBF8; }
+  .maps-link-icon { font-size:1.1rem; flex-shrink:0; }
+  .maps-link-text { font-size:.78rem; font-weight:600; color:var(--sky); flex:1; }
+  .maps-link-arrow { font-size:.75rem; color:var(--sky); opacity:.6; }
+
   /* DELAY TRACKER */
   .delay-tracker { margin:0 17px 14px; border-radius:12px; overflow:hidden; border:1.5px solid rgba(44,62,80,.1); }
   .delay-header { padding:11px 14px; background:#f8f8f8; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; }
@@ -359,6 +366,11 @@
     <div class="day-card active" data-day="1">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 1 of 8</span><div class="day-title">El Dorado Hills → Paso Robles</div><div class="day-date">Monday, March 30</div></div><span class="day-badge badge-drive">Drive Day</span></div>
       <div class="today-depart"><div class="icon">🚐</div><div><h4>Leave by 7:00 AM</h4><p>Arrive Paso Robles ~11:30 AM</p></div></div>
+      <a href="https://www.google.com/maps/dir/?api=1&origin=El+Dorado+Hills,+CA&destination=Paso+Robles,+CA&travelmode=driving" target="_blank" class="maps-link">
+        <span class="maps-link-icon">🗺️</span>
+        <span class="maps-link-text">Open in Google Maps — El Dorado Hills → Paso Robles</span>
+        <span class="maps-link-arrow">↗</span>
+      </a>
       <div class="delay-tracker" id="tracker-day1">
         <div class="delay-header" onclick="toggleTracker(1)">
           <div class="delay-header-left">
@@ -455,6 +467,11 @@
     <div class="day-card" data-day="2">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 2 of 8</span><div class="day-title">Paso Robles → Sedona</div><div class="day-date">Tuesday, March 31 — Longest Drive</div></div><span class="day-badge badge-drive">Long Drive</span></div>
       <div class="today-depart"><div class="icon">⚠️</div><div><h4>Leave by 6:30 AM — No Exceptions</h4><p>9–9.5 hrs total. Early start = red rock sunset arrival.</p></div></div>
+      <a href="https://www.google.com/maps/dir/?api=1&origin=Paso+Robles,+CA&destination=Sedona,+AZ&travelmode=driving" target="_blank" class="maps-link">
+        <span class="maps-link-icon">🗺️</span>
+        <span class="maps-link-text">Open in Google Maps — Paso Robles → Sedona</span>
+        <span class="maps-link-arrow">↗</span>
+      </a>
       <div class="delay-tracker" id="tracker-day2">
         <div class="delay-header" onclick="toggleTracker(2)">
           <div class="delay-header-left">
@@ -552,6 +569,11 @@
     <div class="day-card" data-day="3">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 3 of 8</span><div class="day-title">Sedona Morning → Buckeye</div><div class="day-date">Wednesday, April 1 — Easy Day</div></div><span class="day-badge badge-explore">Short Drive</span></div>
       <div class="today-depart"><div class="icon">🌄</div><div><h4>Leave by 11:00 AM</h4><p>Only 2 hrs to Buckeye — enjoy Sedona morning first!</p></div></div>
+      <a href="https://www.google.com/maps/dir/?api=1&origin=Sedona,+AZ&destination=Buckeye,+AZ&travelmode=driving" target="_blank" class="maps-link">
+        <span class="maps-link-icon">🗺️</span>
+        <span class="maps-link-text">Open in Google Maps — Sedona → Buckeye</span>
+        <span class="maps-link-arrow">↗</span>
+      </a>
       <div class="delay-tracker" id="tracker-day3">
         <div class="delay-header" onclick="toggleTracker(3)">
           <div class="delay-header-left">
@@ -583,6 +605,11 @@
     <div class="day-card" data-day="4">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 4 of 8</span><div class="day-title">Buckeye → Grand Canyon</div><div class="day-date">Thursday, April 2</div></div><span class="day-badge badge-drive">Drive Day</span></div>
       <div class="today-depart"><div class="icon">🏔️</div><div><h4>Leave by 9:00 AM</h4><p>Arrive Grand Canyon ~1 PM — full afternoon on the rim</p></div></div>
+      <a href="https://www.google.com/maps/dir/?api=1&origin=Buckeye,+AZ&destination=Grand+Canyon+Village,+AZ&travelmode=driving" target="_blank" class="maps-link">
+        <span class="maps-link-icon">🗺️</span>
+        <span class="maps-link-text">Open in Google Maps — Buckeye → Grand Canyon</span>
+        <span class="maps-link-arrow">↗</span>
+      </a>
       <div class="delay-tracker" id="tracker-day4">
         <div class="delay-header" onclick="toggleTracker(4)">
           <div class="delay-header-left">
@@ -667,6 +694,11 @@
     <div class="day-card" data-day="5">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 5 of 8</span><div class="day-title">Grand Canyon → Zion</div><div class="day-date">Friday, April 3</div></div><span class="day-badge badge-drive">Drive Day</span></div>
       <div class="today-depart"><div class="icon">🌅</div><div><h4>Morning at rim, leave by 10:00 AM</h4><p>5 hrs to Zion — optional sunrise first</p></div></div>
+      <a href="https://www.google.com/maps/dir/?api=1&origin=Grand+Canyon+Village,+AZ&destination=Springdale,+UT&travelmode=driving" target="_blank" class="maps-link">
+        <span class="maps-link-icon">🗺️</span>
+        <span class="maps-link-text">Open in Google Maps — Grand Canyon → Zion</span>
+        <span class="maps-link-arrow">↗</span>
+      </a>
       <div class="delay-tracker" id="tracker-day5">
         <div class="delay-header" onclick="toggleTracker(5)">
           <div class="delay-header-left">
@@ -751,6 +783,11 @@
     <div class="day-card" data-day="6">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 6 of 8</span><div class="day-title">Zion + Scenic Byway 12 → Capitol Reef</div><div class="day-date">Saturday, April 4</div></div><span class="day-badge badge-explore">Scenic Day</span></div>
       <div class="today-depart"><div class="icon">🚌</div><div><h4>Shuttle at 7:00 AM, leave hotel by noon</h4><p>Morning in Zion, afternoon on the best drive in America</p></div></div>
+      <a href="https://www.google.com/maps/dir/?api=1&origin=Springdale,+UT&destination=Torrey,+UT&waypoints=Kanab,+UT|UT-12&travelmode=driving" target="_blank" class="maps-link">
+        <span class="maps-link-icon">🗺️</span>
+        <span class="maps-link-text">Open in Google Maps — Zion → Capitol Reef via Byway 12</span>
+        <span class="maps-link-arrow">↗</span>
+      </a>
       <div class="delay-tracker" id="tracker-day6">
         <div class="delay-header" onclick="toggleTracker(6)">
           <div class="delay-header-left">
@@ -836,6 +873,11 @@
     <div class="day-card" data-day="7">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 7 of 8</span><div class="day-title">Capitol Reef → Pismo Beach</div><div class="day-date">Sunday, April 5 — Long Return</div></div><span class="day-badge badge-drive">Long Drive</span></div>
       <div class="today-depart"><div class="icon">⚠️</div><div><h4>Leave by 7:00 AM</h4><p>9+ hrs to Pismo. Early start = beach sunset.</p></div></div>
+      <a href="https://www.google.com/maps/dir/?api=1&origin=Torrey,+UT&destination=Pismo+Beach,+CA&travelmode=driving" target="_blank" class="maps-link">
+        <span class="maps-link-icon">🗺️</span>
+        <span class="maps-link-text">Open in Google Maps — Capitol Reef → Pismo Beach</span>
+        <span class="maps-link-arrow">↗</span>
+      </a>
       <div class="delay-tracker" id="tracker-day7">
         <div class="delay-header" onclick="toggleTracker(7)">
           <div class="delay-header-left">
@@ -920,6 +962,11 @@
     <div class="day-card" data-day="8">
       <div class="day-header"><div class="day-meta"><span class="day-num">Day 8 of 8</span><div class="day-title">Pismo Beach → Home 🎉</div><div class="day-date">Monday, April 6</div></div><span class="day-badge badge-home">Home Day</span></div>
       <div class="today-depart"><div class="icon">🏠</div><div><h4>Leave by 9:00 AM</h4><p>Home by 3 PM — easy final stretch</p></div></div>
+      <a href="https://www.google.com/maps/dir/?api=1&origin=Pismo+Beach,+CA&destination=El+Dorado+Hills,+CA&travelmode=driving" target="_blank" class="maps-link">
+        <span class="maps-link-icon">🗺️</span>
+        <span class="maps-link-text">Open in Google Maps — Pismo Beach → El Dorado Hills</span>
+        <span class="maps-link-arrow">↗</span>
+      </a>
       <div class="delay-tracker" id="tracker-day8">
         <div class="delay-header" onclick="toggleTracker(8)">
           <div class="delay-header-left">
