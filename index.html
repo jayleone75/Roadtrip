@@ -1704,42 +1704,37 @@ async function loadPhotos() {
   const bulkBar = document.getElementById('photo-bulk-bar');
   if (bulkBar) bulkBar.style.display = data.length > 0 ? 'flex' : 'none';
 
-  // Render grid — X always visible on every photo
+  // Render photos — each photo has a DELETE button sitting completely outside/below it
   grid.innerHTML = data.map(p => `
-    <div class="photo-item" data-id="${p.id}" data-url="${encodeURIComponent(p.url)}" data-caption="${encodeURIComponent(p.caption||'')}">
-      <img src="${p.url}" alt="trip photo" loading="lazy">
-      <div class="photo-caption">${p.caption||''}</div>
-      <button class="photo-delete-btn">✕</button>
+    <div style="display:flex;flex-direction:column;border-radius:11px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.12);" data-photoid="${p.id}" data-photourl="${encodeURIComponent(p.url)}">
+      <div class="photo-item" style="cursor:pointer;" data-caption="${encodeURIComponent(p.caption||'')}">
+        <img src="${p.url}" alt="trip photo" loading="lazy">
+        <div class="photo-caption">${p.caption||''}</div>
+      </div>
+      <button class="photo-item-delete" data-delid="${p.id}" data-delurl="${encodeURIComponent(p.url)}">✕ Delete</button>
     </div>
   `).join('');
 
-  // Attach click handlers after DOM is built
-  grid.querySelectorAll('.photo-item img').forEach(img => {
-    img.addEventListener('click', () => {
-      const item = img.closest('.photo-item');
-      openLightbox(decodeURIComponent(item.dataset.url), decodeURIComponent(item.dataset.caption));
+  // Photo lightbox clicks
+  grid.querySelectorAll('.photo-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const url = decodeURIComponent(item.closest('[data-photoid]').dataset.photourl);
+      const caption = decodeURIComponent(item.dataset.caption);
+      openLightbox(url, caption);
     });
   });
-  grid.querySelectorAll('.photo-delete-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      // Change button to show it's working
-      btn.textContent = '⏳';
+
+  // Delete button clicks — completely separate from photo
+  grid.querySelectorAll('.photo-item-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.delid;
+      const url = decodeURIComponent(btn.dataset.delurl);
+      btn.textContent = 'Deleting...';
       btn.disabled = true;
-      const item = btn.closest('.photo-item');
-      const id = item.dataset.id;
-      const url = decodeURIComponent(item.dataset.url);
-      // Delete from DB
-      const { error } = await sb.from('trip_photos').delete().eq('id', id);
-      if (error) { console.error('Delete error:', error); btn.textContent = '✕'; btn.disabled = false; return; }
-      // Delete from storage
+      await sb.from('trip_photos').delete().eq('id', id);
       const filename = url.split('/trip-photos/')[1]?.split('?')[0] || url.split('/').pop().split('?')[0];
       await sb.storage.from('trip-photos').remove([filename]);
-      // Remove from DOM
-      item.style.opacity = '0';
-      item.style.transition = 'opacity 0.2s';
-      setTimeout(() => item.remove(), 200);
+      btn.closest('[data-photoid]').remove();
     });
   });
 
