@@ -1673,11 +1673,10 @@ let photoMap = null;
 let photoPollingInterval = null;
 
 function startPhotoPolling() {
-  if (photoPollingInterval) return; // already running
-  // photoPollingInterval = setInterval(() => {
-  // dbg('[Photos] Auto-refreshing...');
-  // loadPhotos();
-  }, 15000); // refresh every 15 seconds
+  // Auto-refresh disabled — photos load once when tab opens
+  // Uncomment below to re-enable 15 second refresh:
+  // if (photoPollingInterval) return;
+  // photoPollingInterval = setInterval(() => { loadPhotos(); }, 15000);
 }
 
 function stopPhotoPolling() {
