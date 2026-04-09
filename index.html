@@ -1723,17 +1723,23 @@ async function loadPhotos() {
   grid.querySelectorAll('.photo-delete-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (!confirm('Delete this photo?')) return;
+      e.preventDefault();
+      // Change button to show it's working
+      btn.textContent = '⏳';
+      btn.disabled = true;
       const item = btn.closest('.photo-item');
       const id = item.dataset.id;
       const url = decodeURIComponent(item.dataset.url);
-      await sb.from('trip_photos').delete().eq('id', id);
+      // Delete from DB
+      const { error } = await sb.from('trip_photos').delete().eq('id', id);
+      if (error) { console.error('Delete error:', error); btn.textContent = '✕'; btn.disabled = false; return; }
+      // Delete from storage
       const filename = url.split('/trip-photos/')[1]?.split('?')[0] || url.split('/').pop().split('?')[0];
       await sb.storage.from('trip-photos').remove([filename]);
-      item.remove(); // Remove from DOM immediately
-      const remaining = grid.querySelectorAll('.photo-item').length;
-      const bulkBar = document.getElementById('photo-bulk-bar');
-      if (bulkBar) bulkBar.style.display = remaining > 0 ? 'flex' : 'none';
+      // Remove from DOM
+      item.style.opacity = '0';
+      item.style.transition = 'opacity 0.2s';
+      setTimeout(() => item.remove(), 200);
     });
   });
 
