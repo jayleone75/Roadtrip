@@ -145,8 +145,8 @@
   .upload-text { font-size:.85rem; font-weight:600; color:var(--rust); display:block; margin-bottom:3px; }
   .upload-sub { font-size:.73rem; color:var(--warm-gray); }
   .photo-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:9px; }
-  .photo-item { border-radius:11px; overflow:hidden; aspect-ratio:1; position:relative; background:var(--sand); }
-  .photo-item img { width:100%; height:100%; object-fit:cover; }
+  .photo-item { border-radius:11px; overflow:visible; aspect-ratio:1; position:relative; background:var(--sand); }
+  .photo-item img { width:100%; height:100%; object-fit:cover; border-radius:11px; display:block; }
   .photo-caption { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(0,0,0,.6)); color:#fff; font-size:.68rem; padding:14px 7px 7px; font-weight:500; }
   .empty-photos { text-align:center; padding:28px; color:var(--warm-gray); font-size:.83rem; }
   .loading-photos { text-align:center; padding:28px; color:var(--warm-gray); font-size:.83rem; }
@@ -1115,8 +1115,7 @@
   <!-- PHOTO GRID -->
   <div class="photo-map-label">All Photos</div>
   <div class="bulk-delete-bar" id="photo-bulk-bar" style="display:none">
-    <button class="bulk-btn toggle" id="delete-mode-btn" onclick="toggleDeleteMode()">✏️ Tap to Select &amp; Delete</button>
-    <button class="bulk-btn danger" onclick="deleteAllPhotos()">🗑️ Delete All</button>
+    <button class="bulk-btn danger" onclick="deleteAllPhotos()">🗑️ Delete All Photos</button>
   </div>
 
   <div id="photo-empty" class="empty-photos"><div style="font-size:2rem;margin-bottom:8px;">🌵</div><div>Leone family trip photos will appear here.<br>Photos taken with location on get pinned to the map!</div></div>
@@ -1705,14 +1704,12 @@ async function loadPhotos() {
   const bulkBar = document.getElementById('photo-bulk-bar');
   if (bulkBar) bulkBar.style.display = data.length > 0 ? 'flex' : 'none';
 
-  // Render grid with delete buttons
+  // Render grid — X always visible on every photo
   grid.innerHTML = data.map(p => `
-    <div class="photo-item-wrap photo-item">
-      <div onclick="openLightbox('${p.url}','${(p.caption||'').replace(/'/g,"\'")}')">
-        <img src="${p.url}" alt="Leone trip photo" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:11px;">
-      </div>
+    <div class="photo-item">
+      <img src="${p.url}" alt="trip photo" loading="lazy" onclick="openLightbox('${p.url}','${(p.caption||'').replace(/'/g,"\'")}')">
       <div class="photo-caption">${p.caption||''}</div>
-      <button class="photo-delete-btn" onclick="deletePhoto(event, ${p.id}, '${p.url}')" title="Delete photo">✕</button>
+      <button class="photo-delete-btn" onclick="deletePhoto(event, ${p.id}, '${p.url}')">✕</button>
     </div>
   `).join('');
 
@@ -1837,16 +1834,6 @@ function closeCluster(e) {
   if (e && e.target !== document.getElementById('cluster-popup')) return;
   document.getElementById('cluster-popup').classList.remove('open');
   document.body.style.overflow = '';
-}
-
-let deleteMode = false;
-
-function toggleDeleteMode() {
-  deleteMode = !deleteMode;
-  const btn = document.getElementById('delete-mode-btn');
-  btn.textContent = deleteMode ? '✅ Done Deleting' : '✏️ Tap to Select & Delete';
-  btn.classList.toggle('active', deleteMode);
-  document.getElementById('photo-grid').classList.toggle('delete-mode', deleteMode);
 }
 
 async function deletePhoto(e, id, url) {
