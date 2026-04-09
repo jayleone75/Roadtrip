@@ -1115,7 +1115,7 @@
   <!-- PHOTO GRID -->
   <div class="photo-map-label">All Photos</div>
   <div class="bulk-delete-bar" id="photo-bulk-bar" style="display:none">
-    <button class="bulk-btn toggle" id="delete-mode-btn" onclick="toggleDeleteMode()">✏️ Edit / Delete</button>
+    <button class="bulk-btn toggle" id="delete-mode-btn" onclick="toggleDeleteMode()">✏️ Tap to Select &amp; Delete</button>
     <button class="bulk-btn danger" onclick="deleteAllPhotos()">🗑️ Delete All</button>
   </div>
 
@@ -1674,9 +1674,9 @@ let photoPollingInterval = null;
 
 function startPhotoPolling() {
   if (photoPollingInterval) return; // already running
-  photoPollingInterval = setInterval(() => {
-    dbg('[Photos] Auto-refreshing...');
-    loadPhotos();
+  // photoPollingInterval = setInterval(() => {
+  // dbg('[Photos] Auto-refreshing...');
+  // loadPhotos();
   }, 15000); // refresh every 15 seconds
 }
 
@@ -1845,7 +1845,7 @@ let deleteMode = false;
 function toggleDeleteMode() {
   deleteMode = !deleteMode;
   const btn = document.getElementById('delete-mode-btn');
-  btn.textContent = deleteMode ? '✅ Done' : '✏️ Edit / Delete';
+  btn.textContent = deleteMode ? '✅ Done Deleting' : '✏️ Tap to Select & Delete';
   btn.classList.toggle('active', deleteMode);
   document.getElementById('photo-grid').classList.toggle('delete-mode', deleteMode);
 }
