@@ -1706,12 +1706,36 @@ async function loadPhotos() {
 
   // Render grid — X always visible on every photo
   grid.innerHTML = data.map(p => `
-    <div class="photo-item">
-      <img src="${p.url}" alt="trip photo" loading="lazy" onclick="openLightbox('${p.url}','${(p.caption||'').replace(/'/g,"\'")}')">
+    <div class="photo-item" data-id="${p.id}" data-url="${encodeURIComponent(p.url)}" data-caption="${encodeURIComponent(p.caption||'')}">
+      <img src="${p.url}" alt="trip photo" loading="lazy">
       <div class="photo-caption">${p.caption||''}</div>
-      <button class="photo-delete-btn" onclick="deletePhoto(event, ${p.id}, '${p.url}')">✕</button>
+      <button class="photo-delete-btn">✕</button>
     </div>
   `).join('');
+
+  // Attach click handlers after DOM is built
+  grid.querySelectorAll('.photo-item img').forEach(img => {
+    img.addEventListener('click', () => {
+      const item = img.closest('.photo-item');
+      openLightbox(decodeURIComponent(item.dataset.url), decodeURIComponent(item.dataset.caption));
+    });
+  });
+  grid.querySelectorAll('.photo-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm('Delete this photo?')) return;
+      const item = btn.closest('.photo-item');
+      const id = item.dataset.id;
+      const url = decodeURIComponent(item.dataset.url);
+      await sb.from('trip_photos').delete().eq('id', id);
+      const filename = url.split('/trip-photos/')[1]?.split('?')[0] || url.split('/').pop().split('?')[0];
+      await sb.storage.from('trip-photos').remove([filename]);
+      item.remove(); // Remove from DOM immediately
+      const remaining = grid.querySelectorAll('.photo-item').length;
+      const bulkBar = document.getElementById('photo-bulk-bar');
+      if (bulkBar) bulkBar.style.display = remaining > 0 ? 'flex' : 'none';
+    });
+  });
 
   // Init memory map with pinned photos
   initPhotoMap(data);
@@ -1836,19 +1860,7 @@ function closeCluster(e) {
   document.body.style.overflow = '';
 }
 
-async function deletePhoto(e, id, url) {
-  e.stopPropagation();
-  if (!confirm('Delete this photo?')) return;
-
-  // Delete from database
-  await sb.from('trip_photos').delete().eq('id', id);
-
-  // Delete from storage — extract filename from URL
-  const filename = url.split('/').pop().split('?')[0];
-  await sb.storage.from('trip-photos').remove([filename]);
-
-  loadPhotos();
-}
+// deletePhoto handled inline via event listeners
 
 async function deleteAllPhotos() {
   if (!confirm('Delete ALL photos? This cannot be undone.')) return;
