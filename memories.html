@@ -1716,9 +1716,6 @@ function memLightbox(img) {
   document.getElementById('mem-lightbox').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
-document.getElementById('mem-lightbox').addEventListener('click', () => {
-  document.body.style.overflow = '';
-});
 
 // Scroll reveal for timeline entries
 const observer = new IntersectionObserver((entries) => {
@@ -1731,6 +1728,17 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.15 });
 
 document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el));
+
+// Lightbox close on background click
+const lb = document.getElementById('mem-lightbox');
+if (lb) {
+  lb.addEventListener('click', (e) => {
+    if (e.target === lb || e.target.classList.contains('mem-lightbox-close')) {
+      lb.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+}
 
 function openLB(src) {
   document.getElementById('lb-img').src = src;
