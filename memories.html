@@ -55,19 +55,25 @@
   /* COLLAGE */
   .collage { margin-top:20px; }
   .collage-hero { width:100%; border-radius:14px; overflow:hidden; margin-bottom:10px; box-shadow:0 6px 24px rgba(0,0,0,.15); cursor:pointer; }
-  .collage-hero img { width:100%; height:300px; object-fit:cover; display:block; transition:transform .4s; }
+  .collage-hero img { width:100%; height:420px; object-fit:cover; object-position:center top; display:block; transition:transform .4s; }
   .collage-hero:hover img { transform:scale(1.02); }
   .collage-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-  .collage-thumb { border-radius:10px; overflow:hidden; aspect-ratio:3/4; cursor:pointer; box-shadow:0 3px 12px rgba(0,0,0,.12); }
+  .collage-thumb { border-radius:10px; overflow:hidden; aspect-ratio:1; cursor:pointer; box-shadow:0 3px 12px rgba(0,0,0,.12); }
   .collage-thumb img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s; }
   .collage-thumb:hover img { transform:scale(1.05); }
   .photo-coming { background:var(--sand); border:2px dashed rgba(139,58,15,.2); border-radius:12px; padding:20px; text-align:center; margin-top:14px; font-family:'DM Mono',monospace; font-size:.68rem; color:var(--warm-gray); }
 
   /* LIGHTBOX */
-  .mem-lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:9999; align-items:center; justify-content:center; padding:20px; cursor:pointer; }
+  .mem-lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:9999; align-items:center; justify-content:center; padding:20px; }
   .mem-lightbox.open { display:flex; }
-  .mem-lightbox img { max-width:100%; max-height:90vh; border-radius:8px; object-fit:contain; }
-  .mem-lightbox-close { position:absolute; top:20px; right:24px; color:#fff; font-size:2rem; cursor:pointer; }
+  .mem-lightbox img { max-width:calc(100% - 120px); max-height:90vh; border-radius:8px; object-fit:contain; }
+  .mem-lightbox-close { position:absolute; top:20px; right:24px; color:#fff; font-size:2rem; cursor:pointer; z-index:10; line-height:1; }
+  .mem-lb-nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.15); border:none; color:#fff; font-size:1.8rem; width:52px; height:52px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s; user-select:none; }
+  .mem-lb-nav:hover { background:rgba(255,255,255,.3); }
+  .mem-lb-nav:disabled { opacity:.2; cursor:default; }
+  .mem-lb-prev { left:16px; }
+  .mem-lb-next { right:16px; }
+  .mem-lb-counter { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,.5); font-family:"DM Mono",monospace; font-size:.75rem; letter-spacing:.1em; }
 
   /* QUOTE */
   .quote-section { background:var(--rust); padding:80px 20px; text-align:center; position:relative; overflow:hidden; }
@@ -99,8 +105,11 @@
 
 <!-- LIGHTBOX -->
 <div class="mem-lightbox" id="mem-lightbox">
-  <span class="mem-lightbox-close">✕</span>
+  <span class="mem-lightbox-close" id="mem-lb-close">✕</span>
+  <button class="mem-lb-nav mem-lb-prev" id="mem-lb-prev">&#8592;</button>
   <img id="mem-lightbox-img" src="" alt="">
+  <button class="mem-lb-nav mem-lb-next" id="mem-lb-next">&#8594;</button>
+  <div class="mem-lb-counter" id="mem-lb-counter"></div>
 </div>
 
 <!-- HERO -->
@@ -337,28 +346,59 @@
         <span class="memory-tag">💨 Windy &amp; cold</span>
         <span class="memory-tag">🎟️ Free with park pass</span>
         <span class="memory-tag">👨‍👧‍👦 Kids stayed back</span>
-        <div class="collage">
-          <div class="collage-hero" onclick="memLightbox('photos/grand-canyon/grand-canyon-hero.jpg')">
+        <span class="memory-tag">🍔 The Burger Incident</span>
+
+        <div style="background:linear-gradient(135deg,#fff8f4,#fff3ee);border-left:4px solid var(--rust);border-radius:0 12px 12px 0;padding:18px 20px;margin:16px 0;box-shadow:0 3px 12px rgba(196,98,45,.08);">
+          <p style="font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.12em;color:var(--rust);text-transform:uppercase;margin-bottom:8px;">🍔 The Burger Incident — A Story in Three Acts</p>
+          <p class="timeline-story" style="margin-bottom:10px;">After the sunset hike, the family headed to the lodge cafeteria for dinner — a surprisingly modern setup with big screens, a full bar, and table service. Everyone ordered burgers. Simple enough.</p>
+          <p class="timeline-story" style="margin-bottom:10px;"><em>Act One: The Problem.</em> Capri's burger arrived with melted cheese. Capri does not do cheese. True to her character, she took it in stride — "I can just scrape it off," she said. Crisis averted, or so it seemed.</p>
+          <p class="timeline-story" style="margin-bottom:10px;"><em>Act Two: The Hero.</em> Before anyone could react, Parisi spoke up — completely unprompted. "Capri, once cheese is melted it comes right off." And then offered to swap burgers entirely. No hesitation. Jay and Dana exchanged that look parents exchange when their kid does something that makes them genuinely proud. <em>An incredible gesture.</em></p>
+          <p class="timeline-story" style="margin-bottom:10px;"><em>Act Three: The Twist.</em> Did Parisi know something was wrong with that burger? We may never know. What we do know is that several hours later, in the middle of the night, poor Capri saw that burger again. All over the hotel room. <em>Not a pretty sight.</em></p>
+          <p class="timeline-story" style="margin-bottom:0;font-style:italic;color:var(--warm-gray);">The Grand Canyon: magnificent by day. A lesson in sibling loyalty and questionable burger quality by night.</p>
+        </div>
+        <div class="collage" data-gallery="gc">
+          <div class="collage-hero" onclick="memLightbox(0,'gc')">
             <img src="photos/grand-canyon/grand-canyon-hero.jpg" alt="The Leone family at the Grand Canyon South Rim">
           </div>
           <div class="collage-grid">
-            <div class="collage-thumb" onclick="memLightbox('photos/grand-canyon/grand-canyon-01.jpg')">
-              <img src="photos/grand-canyon/grand-canyon-01.jpg" alt="Grand Canyon — wide view from South Rim">
+            <div class="collage-thumb" onclick="memLightbox(1,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-01.jpg" alt="Grand Canyon wide view">
             </div>
-            <div class="collage-thumb" onclick="memLightbox('photos/grand-canyon/grand-canyon-03.jpg')">
-              <img src="photos/grand-canyon/grand-canyon-03.jpg" alt="Colorado River far below">
+            <div class="collage-thumb" onclick="memLightbox(2,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-02.jpg" alt="Canyon layers">
             </div>
-            <div class="collage-thumb" onclick="memLightbox('photos/grand-canyon/grand-canyon-10.jpg')">
-              <img src="photos/grand-canyon/grand-canyon-10.jpg" alt="Family at Grand Canyon sunset">
+            <div class="collage-thumb" onclick="memLightbox(3,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-03.jpg" alt="Colorado River below">
             </div>
-            <div class="collage-thumb" onclick="memLightbox('photos/grand-canyon/grand-canyon-09.jpg')">
-              <img src="photos/grand-canyon/grand-canyon-09.jpg" alt="Jay and Dana at Grand Canyon sunset">
+            <div class="collage-thumb" onclick="memLightbox(4,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-04.jpg" alt="Canyon warm tones">
             </div>
-            <div class="collage-thumb" onclick="memLightbox('photos/grand-canyon/grand-canyon-12.jpg')">
-              <img src="photos/grand-canyon/grand-canyon-12.jpg" alt="Dana and kids at the rim overlook">
+            <div class="collage-thumb" onclick="memLightbox(5,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-05.jpg" alt="Layered buttes">
             </div>
-            <div class="collage-thumb" onclick="memLightbox('photos/grand-canyon/grand-canyon-13.jpg')">
-              <img src="photos/grand-canyon/grand-canyon-13.jpg" alt="Hermits Rest — Grand Canyon">
+            <div class="collage-thumb" onclick="memLightbox(6,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-06.jpg" alt="Dana selfie at the rim">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(7,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-07.jpg" alt="Grand Canyon NPS plaque">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(8,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-08.jpg" alt="Canyon at dusk">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(9,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-09.jpg" alt="Jay and Dana sunset selfie">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(10,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-10.jpg" alt="Family sunset selfie">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(11,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-11.jpg" alt="Canyon through trees">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(12,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-12.jpg" alt="Dana and kids at railing">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(13,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-13.jpg" alt="Hermits Rest sign">
             </div>
           </div>
         </div>
@@ -431,18 +471,71 @@
 </footer>
 
 <script>
-function memLightbox(src) {
-  document.getElementById('mem-lightbox-img').src = src;
+// Gallery registry — built from DOM on load
+const galleries = {};
+let lbGallery = null;
+let lbIndex = 0;
+
+function buildGalleries() {
+  document.querySelectorAll('[data-gallery]').forEach(collage => {
+    const name = collage.dataset.gallery;
+    const imgs = Array.from(collage.querySelectorAll('img')).map(img => ({
+      src: img.src, alt: img.alt
+    }));
+    galleries[name] = imgs;
+  });
+}
+
+function memLightbox(index, gallery) {
+  lbGallery = gallery;
+  lbIndex = index;
+  showLbImage();
   document.getElementById('mem-lightbox').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
+function showLbImage() {
+  const imgs = galleries[lbGallery];
+  document.getElementById('mem-lightbox-img').src = imgs[lbIndex].src;
+  document.getElementById('mem-lightbox-img').alt = imgs[lbIndex].alt;
+  document.getElementById('mem-lb-counter').textContent = (lbIndex + 1) + ' / ' + imgs.length;
+  document.getElementById('mem-lb-prev').disabled = lbIndex === 0;
+  document.getElementById('mem-lb-next').disabled = lbIndex === imgs.length - 1;
+}
+
+function closeLightbox() {
+  document.getElementById('mem-lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('mem-lightbox').addEventListener('click', () => {
-    document.getElementById('mem-lightbox').classList.remove('open');
-    document.body.style.overflow = '';
+  buildGalleries();
+
+  // Close on backdrop click
+  document.getElementById('mem-lightbox').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('mem-lightbox')) closeLightbox();
+  });
+  document.getElementById('mem-lb-close').addEventListener('click', closeLightbox);
+
+  // Nav arrows
+  document.getElementById('mem-lb-prev').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (lbIndex > 0) { lbIndex--; showLbImage(); }
+  });
+  document.getElementById('mem-lb-next').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (lbIndex < galleries[lbGallery].length - 1) { lbIndex++; showLbImage(); }
   });
 
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (!document.getElementById('mem-lightbox').classList.contains('open')) return;
+    if (e.key === 'ArrowLeft' && lbIndex > 0) { lbIndex--; showLbImage(); }
+    if (e.key === 'ArrowRight' && lbIndex < galleries[lbGallery].length - 1) { lbIndex++; showLbImage(); }
+    if (e.key === 'Escape') closeLightbox();
+  });
+
+  // Scroll reveal
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
