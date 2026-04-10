@@ -378,23 +378,101 @@
     </div>
 
     <!-- SEDONA & BUCKEYE -->
+    <!-- SEDONA -->
     <div class="timeline-entry" data-reveal>
       <div class="timeline-dot" style="background:linear-gradient(135deg,#C4622D,#D4A843)">🏜️</div>
       <div class="timeline-body">
         <p class="timeline-date">March 31 – April 1 — Days 2–3</p>
-        <h3 class="timeline-place">Sedona & Buckeye</h3>
-        <p class="timeline-story">Red rock country. The kind of landscape that makes you understand why people move to Arizona and never leave. After exploring Sedona's stunning red rock canyons and charming Uptown shops, the family headed south to Buckeye to stay with friends — a reminder that the best road trips weave people into the miles, not just places.</p>
-        <span class="memory-tag">🏜️ Red rocks</span>
-        <span class="memory-tag">🛍️ Uptown Sedona</span>
-        <span class="memory-tag">👫 Friends in Buckeye</span>
-        <div class="collage">
-          <div class="collage-hero" onclick="memLightbox('photos/sedona/sedona-hero.jpg')">
-            <img src="photos/sedona/sedona-hero.jpg" alt="The Leone family in front of Sedona red rocks">
+        <h3 class="timeline-place">Sedona</h3>
+        <p class="timeline-story">Red rock country. The kind of landscape that makes you understand why people move to Arizona and never leave. West Fork Trail wound through Oak Creek Canyon — creek crossings, canyon walls, towering pines, and a hidden cave that Jay and one of the kids had to investigate. Uptown Sedona delivered on shopping, ice cream, and a gold gorilla statue that demanded a photo.</p>
+        <span class="memory-tag">🏜️ West Fork Trail</span>
+        <span class="memory-tag">🪨 Red rock canyon</span>
+        <span class="memory-tag">🕳️ Hidden cave</span>
+        <span class="memory-tag">🍦 Uptown Sedona</span>
+        <div class="audio-player" id="sedona-audio-player" style="display:none">
+          <button class="audio-play-btn" id="sedona-play-btn" onclick="toggleAudio('sedona')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Story</div>
+            <div class="audio-label">Sedona</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="sedona-bar" onclick="seekAudio(event,'sedona')">
+              <div class="audio-bar-fill" id="sedona-fill"></div>
+            </div>
+            <div class="audio-time" id="sedona-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="sedona-wave">
+            <span style="height:6px"></span><span style="height:10px"></span>
+            <span style="height:14px"></span><span style="height:8px"></span>
+            <span style="height:16px"></span><span style="height:10px"></span>
+            <span style="height:6px"></span><span style="height:12px"></span>
+          </div>
+          <audio id="sedona-audio" src="audio/sedona.mp3" preload="metadata"></audio>
+        </div>
+        <div class="collage" data-gallery="sedona">
+          <div class="collage-hero" onclick="memLightbox(0,'sedona')">
+            <img src="photos/sedona/sedona-hero.jpg" alt="Leone family under the red rock canyon wall — West Fork">
+          </div>
+          <div class="collage-grid">
+            <div class="collage-thumb" onclick="memLightbox(1,'sedona')">
+              <img src="photos/sedona/sedona-01.jpg" alt="West Fork Oak Creek Canyon creek">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(2,'sedona')">
+              <img src="photos/sedona/sedona-02.jpg" alt="Family at Sedona red rock trailhead">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(3,'sedona')">
+              <img src="photos/sedona/sedona-03.jpg" alt="Family on West Fork trail">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(4,'sedona')">
+              <img src="photos/sedona/sedona-04.jpg" alt="Sedona red rocks wide view">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(5,'sedona')">
+              <img src="photos/sedona/sedona-05.jpg" alt="Family selfie on bridge">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(6,'sedona')">
+              <img src="photos/sedona/sedona-06.jpg" alt="Jay and son at the cave">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(7,'sedona')">
+              <img src="photos/sedona/sedona-07.jpg" alt="Dana and kid at the cave">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(8,'sedona')">
+              <img src="photos/sedona/sedona-08.jpg" alt="Kid crossing the creek">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(9,'sedona')">
+              <img src="photos/sedona/sedona-09.jpg" alt="Family crossing the stream">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(10,'sedona')">
+              <img src="photos/sedona/sedona-10.jpg" alt="Dana and kid at the creek">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(11,'sedona')">
+              <img src="photos/sedona/sedona-11.jpg" alt="Kid in hollow tree">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(12,'sedona')">
+              <img src="photos/sedona/sedona-12.jpg" alt="Kid in hollow tree 2">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(13,'sedona')">
+              <img src="photos/sedona/sedona-13.jpg" alt="Kid with gold gorilla statue">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(14,'sedona')">
+              <img src="photos/sedona/sedona-14.jpg" alt="Driving into Sedona">
+            </div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- BUCKEYE -->
+    <div class="timeline-entry" data-reveal>
+      <div class="timeline-dot" style="background:linear-gradient(135deg,#D4A843,#C4622D)">👫</div>
+      <div class="timeline-body">
+        <p class="timeline-date">April 1 — Day 3</p>
+        <h3 class="timeline-place">Buckeye</h3>
+        <p class="timeline-story">A stop with friends in the Phoenix suburbs — a chance to slow down, catch up, and remember that the best road trips weave people into the miles, not just places.</p>
+        <span class="memory-tag">👫 Friends in Buckeye</span>
+        <span class="memory-tag">🌵 Phoenix suburbs</span>
+        <div class="photo-coming">📸 Photos coming soon</div>
+      </div>
+    </div>
     <!-- GRAND CANYON -->
     <div class="timeline-entry" data-reveal>
       <div class="timeline-dot" style="background:linear-gradient(135deg,#8B3A0F,#C4622D)">🏔️</div>
