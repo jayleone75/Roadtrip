@@ -301,6 +301,26 @@
         <span class="memory-tag">🚐 Sprinter life</span>
         <span class="memory-tag">📺 YouTube marathon</span>
         <span class="memory-tag">☕ Dad drove everything</span>
+        <div class="audio-player" id="intro-audio-player">
+          <button class="audio-play-btn" id="intro-play-btn" onclick="toggleAudio('intro')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Intro</div>
+            <div class="audio-label">The Leone Family Adventure</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="intro-bar" onclick="seekAudio(event,'intro')">
+              <div class="audio-bar-fill" id="intro-fill"></div>
+            </div>
+            <div class="audio-time" id="intro-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="intro-wave">
+            <span style="height:6px"></span><span style="height:10px"></span>
+            <span style="height:14px"></span><span style="height:8px"></span>
+            <span style="height:16px"></span><span style="height:10px"></span>
+            <span style="height:6px"></span><span style="height:12px"></span>
+          </div>
+          <audio id="intro-audio" src="audio/intro.mp3" preload="metadata"></audio>
+        </div>
       </div>
     </div>
 
@@ -318,6 +338,26 @@
         <span class="memory-tag">🃏 Crazy Eights</span>
         <span class="memory-tag">🌲 Ancient Sequoia</span>
         <span class="memory-tag">💕 Dana's kind of place</span>
+        <div class="audio-player" id="paso-audio-player">
+          <button class="audio-play-btn" id="paso-play-btn" onclick="toggleAudio('paso')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Story</div>
+            <div class="audio-label">Paso Robles &amp; The Allegretto</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="paso-bar" onclick="seekAudio(event,'paso')">
+              <div class="audio-bar-fill" id="paso-fill"></div>
+            </div>
+            <div class="audio-time" id="paso-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="paso-wave">
+            <span style="height:6px"></span><span style="height:10px"></span>
+            <span style="height:14px"></span><span style="height:8px"></span>
+            <span style="height:16px"></span><span style="height:10px"></span>
+            <span style="height:6px"></span><span style="height:12px"></span>
+          </div>
+          <audio id="paso-audio" src="audio/paso-robles.mp3" preload="metadata"></audio>
+        </div>
         <div class="collage">
           <div class="collage-hero" onclick="memLightbox('photos/paso-robles/paso-robles-hero.jpg')">
             <img src="photos/paso-robles/paso-robles-hero.jpg" alt="Dana at the Allegretto with the ancient Sequoia cross-section">
@@ -583,7 +623,7 @@ function formatTime(s) {
 
 // Wire up audio progress for all players
 document.addEventListener('DOMContentLoaded', () => {
-  ['gc'].forEach(id => {
+  ['intro','paso','gc'].forEach(id => {
     const audio = document.getElementById(id + '-audio');
     if (!audio) return;
     audio.addEventListener('timeupdate', () => {
