@@ -52,6 +52,27 @@
   .timeline-story em { color:var(--rust); font-style:italic; }
   .memory-tag { display:inline-block; background:var(--sand); border:1px solid rgba(139,58,15,.2); border-radius:20px; padding:4px 12px; font-family:'DM Mono',monospace; font-size:.62rem; letter-spacing:.08em; color:var(--canyon); text-transform:uppercase; margin:3px 3px 3px 0; }
 
+  /* AUDIO PLAYER */
+  .audio-player { display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,#1a1208,#2c1810); border-radius:14px; padding:14px 18px; margin:16px 0; box-shadow:0 4px 20px rgba(0,0,0,.2); }
+  .audio-play-btn { flex-shrink:0; width:44px; height:44px; border-radius:50%; background:var(--rust); border:none; color:#fff; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; box-shadow:0 3px 12px rgba(196,98,45,.4); }
+  .audio-play-btn:hover { background:#a0461f; transform:scale(1.08); }
+  .audio-play-btn.playing { background:#27AE60; }
+  .audio-info { flex:1; min-width:0; }
+  .audio-title { font-family:"DM Mono",monospace; font-size:.65rem; letter-spacing:.12em; color:rgba(242,232,217,.5); text-transform:uppercase; margin-bottom:4px; }
+  .audio-label { font-family:"Lora",serif; font-size:.88rem; color:var(--sand); font-style:italic; }
+  .audio-progress-wrap { flex:1; display:flex; flex-direction:column; gap:5px; }
+  .audio-bar { width:100%; height:3px; background:rgba(255,255,255,.15); border-radius:2px; cursor:pointer; position:relative; }
+  .audio-bar-fill { height:100%; background:var(--rust); border-radius:2px; width:0%; transition:width .1s; pointer-events:none; }
+  .audio-time { font-family:"DM Mono",monospace; font-size:.6rem; color:rgba(242,232,217,.35); text-align:right; }
+  .audio-waveform { display:flex; align-items:center; gap:2px; height:20px; }
+  .audio-waveform span { display:inline-block; width:2px; background:rgba(196,98,45,.5); border-radius:1px; transition:height .1s; }
+  .audio-waveform.active span { background:var(--rust); }
+  @keyframes wave1 { 0%,100%{height:4px} 50%{height:16px} }
+  @keyframes wave2 { 0%,100%{height:8px} 50%{height:4px} }
+  @keyframes wave3 { 0%,100%{height:12px} 50%{height:20px} }
+  @keyframes wave4 { 0%,100%{height:6px} 50%{height:14px} }
+  @keyframes wave5 { 0%,100%{height:16px} 50%{height:6px} }
+
   /* COLLAGE */
   .collage { margin-top:20px; }
   .collage-hero { width:100%; border-radius:14px; overflow:hidden; margin-bottom:10px; box-shadow:0 6px 24px rgba(0,0,0,.15); cursor:pointer; }
@@ -356,6 +377,31 @@
           <p class="timeline-story" style="margin-bottom:10px;"><em>Act Three: The Twist.</em> The swap was made. Perrisi peeled her Velveeta slabs clean off and everyone ate their burgers. Several hours later, in the dead of night, poor Capri saw that burger again. All over the hotel room. <em>Not a pretty sight.</em></p>
           <p class="timeline-story" style="margin-bottom:0;font-style:italic;color:var(--warm-gray);">Did Perrisi know something was wrong with Capri's burger all along? We may never know. But the cheese situation was undeniably in her favor from the start.</p>
         </div>
+        <div class="audio-player" id="gc-audio-player">
+          <button class="audio-play-btn" id="gc-play-btn" onclick="toggleAudio('gc')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Story</div>
+            <div class="audio-label">The Grand Canyon</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="gc-bar" onclick="seekAudio(event,'gc')">
+              <div class="audio-bar-fill" id="gc-fill"></div>
+            </div>
+            <div class="audio-time" id="gc-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="gc-wave">
+            <span style="height:6px;animation:none"></span>
+            <span style="height:10px;animation:none"></span>
+            <span style="height:14px;animation:none"></span>
+            <span style="height:8px;animation:none"></span>
+            <span style="height:16px;animation:none"></span>
+            <span style="height:10px;animation:none"></span>
+            <span style="height:6px;animation:none"></span>
+            <span style="height:12px;animation:none"></span>
+          </div>
+          <audio id="gc-audio" src="audio/grand-canyon.mp3" preload="metadata"></audio>
+        </div>
+
         <div class="collage" data-gallery="gc">
           <div class="collage-hero" onclick="memLightbox(0,'gc')">
             <img src="photos/grand-canyon/grand-canyon-hero.jpg" alt="The Leone family at the Grand Canyon South Rim">
@@ -471,6 +517,91 @@
 </footer>
 
 <script>
+// ── AUDIO PLAYERS ──
+const audioPlayers = {};
+
+function toggleAudio(id) {
+  const audio = document.getElementById(id + '-audio');
+  const btn = document.getElementById(id + '-play-btn');
+  const wave = document.getElementById(id + '-wave');
+
+  // Pause any other playing audio
+  Object.keys(audioPlayers).forEach(key => {
+    if (key !== id && audioPlayers[key]) {
+      audioPlayers[key].pause();
+      document.getElementById(key + '-play-btn').textContent = '▶';
+      document.getElementById(key + '-play-btn').classList.remove('playing');
+      setWaveActive(key, false);
+    }
+  });
+
+  audioPlayers[id] = audio;
+
+  if (audio.paused) {
+    audio.play();
+    btn.textContent = '⏸';
+    btn.classList.add('playing');
+    setWaveActive(id, true);
+  } else {
+    audio.pause();
+    btn.textContent = '▶';
+    btn.classList.remove('playing');
+    setWaveActive(id, false);
+  }
+}
+
+function setWaveActive(id, active) {
+  const wave = document.getElementById(id + '-wave');
+  if (!wave) return;
+  const anims = ['wave1','wave2','wave3','wave4','wave5','wave2','wave3','wave1'];
+  const heights = [6,10,14,8,16,10,6,12];
+  wave.querySelectorAll('span').forEach((s, i) => {
+    if (active) {
+      s.style.animation = anims[i % anims.length] + ' ' + (0.6 + (i * 0.1)) + 's ease-in-out infinite';
+      wave.classList.add('active');
+    } else {
+      s.style.animation = 'none';
+      s.style.height = heights[i] + 'px';
+      wave.classList.remove('active');
+    }
+  });
+}
+
+function seekAudio(e, id) {
+  const audio = document.getElementById(id + '-audio');
+  const bar = document.getElementById(id + '-bar');
+  const rect = bar.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = pct * audio.duration;
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+// Wire up audio progress for all players
+document.addEventListener('DOMContentLoaded', () => {
+  ['gc'].forEach(id => {
+    const audio = document.getElementById(id + '-audio');
+    if (!audio) return;
+    audio.addEventListener('timeupdate', () => {
+      const pct = (audio.currentTime / audio.duration) * 100 || 0;
+      document.getElementById(id + '-fill').style.width = pct + '%';
+      document.getElementById(id + '-time').textContent =
+        formatTime(audio.currentTime) + ' / ' + formatTime(audio.duration || 0);
+    });
+    audio.addEventListener('ended', () => {
+      document.getElementById(id + '-play-btn').textContent = '▶';
+      document.getElementById(id + '-play-btn').classList.remove('playing');
+      setWaveActive(id, false);
+      document.getElementById(id + '-fill').style.width = '0%';
+    });
+  });
+});
+
+// ── GALLERY REGISTRY ──
 // Gallery registry — built from DOM on load
 const galleries = {};
 let lbGallery = null;
