@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Leone Family Adventure — Spring 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rust: #C4622D; --sand: #F2E8D9; --cream: #FBF6EE; --dusk: #2C3E50;
+    --canyon: #8B3A0F; --sage: #7D9B76; --sky: #4A90A4; --gold: #D4A843;
+    --warm-gray: #8C7B6B; --ink: #1A1208;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--cream); color:var(--ink); font-family:'Lora',Georgia,serif; overflow-x:hidden; }
+
+  /* HERO */
+  .hero { position:relative; height:100vh; min-height:600px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; overflow:hidden; background:var(--dusk); }
+  .hero-texture { position:absolute; inset:0; background-image:radial-gradient(ellipse at 20% 50%,rgba(196,98,45,.3) 0%,transparent 60%),radial-gradient(ellipse at 80% 30%,rgba(74,144,164,.2) 0%,transparent 50%); }
+  .hero-map { position:absolute; inset:0; opacity:.15; }
+  .hero-content { position:relative; z-index:2; padding:20px; }
+  .hero-eyebrow { font-family:'DM Mono',monospace; font-size:.72rem; letter-spacing:.2em; color:var(--gold); text-transform:uppercase; margin-bottom:16px; opacity:0; animation:fadeUp .8s ease forwards .2s; }
+  .hero-title { font-family:'Playfair Display',serif; font-size:clamp(2.8rem,8vw,6rem); font-weight:900; color:var(--sand); line-height:1.0; margin-bottom:12px; opacity:0; animation:fadeUp .8s ease forwards .4s; }
+  .hero-title em { color:var(--gold); font-style:italic; }
+  .hero-sub { font-family:'Lora',serif; font-size:clamp(.9rem,2.5vw,1.15rem); color:rgba(242,232,217,.7); font-style:italic; margin-bottom:32px; opacity:0; animation:fadeUp .8s ease forwards .6s; }
+  .hero-stats { display:flex; gap:32px; justify-content:center; flex-wrap:wrap; opacity:0; animation:fadeUp .8s ease forwards .8s; }
+  .hero-stat { text-align:center; }
+  .hero-stat-num { font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; color:var(--gold); display:block; }
+  .hero-stat-lbl { font-family:'DM Mono',monospace; font-size:.62rem; letter-spacing:.12em; color:rgba(242,232,217,.5); text-transform:uppercase; }
+  .scroll-hint { position:absolute; bottom:28px; left:50%; transform:translateX(-50%); color:rgba(242,232,217,.4); font-family:'DM Mono',monospace; font-size:.65rem; letter-spacing:.15em; text-transform:uppercase; z-index:2; animation:bounce 2s ease infinite; }
+
+  /* MAP */
+  .route-section { background:var(--dusk); padding:60px 20px; text-align:center; position:relative; }
+  .route-section::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at center,rgba(196,98,45,.08) 0%,transparent 70%); }
+  .section-label { font-family:'DM Mono',monospace; font-size:.68rem; letter-spacing:.18em; color:var(--gold); text-transform:uppercase; margin-bottom:12px; }
+  .section-title { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,4vw,2.8rem); color:var(--sand); margin-bottom:40px; font-style:italic; }
+  .route-map-container { max-width:620px; margin:0 auto; }
+  .route-svg { width:100%; height:auto; display:block; border-radius:4px; box-shadow:0 12px 48px rgba(0,0,0,.45); }
+
+  /* Numbered route legend (sits under the map) */
+  .route-legend { list-style:none; margin:32px auto 0; padding:0; max-width:540px; text-align:left; display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; }
+  .route-legend li { display:flex; align-items:baseline; gap:10px; font-family:'Lora',serif; font-size:.92rem; color:rgba(242,232,217,.92); line-height:1.4; }
+  .route-legend li em { font-style:italic; color:rgba(242,232,217,.55); font-size:.82rem; font-family:'DM Mono',monospace; letter-spacing:.02em; }
+  .route-num { flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--ink); color:var(--cream); font-family:'DM Mono',monospace; font-size:.72rem; font-weight:700; border:1.5px solid var(--cream); }
+  @media (max-width:560px) { .route-legend { grid-template-columns:1fr; max-width:340px; } }
+
+  /* TIMELINE */
+  .timeline-section { padding:80px 20px; max-width:820px; margin:0 auto; }
+  .timeline-header { text-align:center; margin-bottom:60px; }
+  .timeline { position:relative; }
+  .timeline::before { content:''; position:absolute; left:28px; top:0; bottom:0; width:2px; background:linear-gradient(to bottom,var(--rust),var(--gold),var(--sage)); opacity:.3; }
+  .timeline-entry { display:flex; gap:24px; margin-bottom:56px; opacity:0; transform:translateX(-20px); transition:all .6s ease; }
+  .timeline-entry.visible { opacity:1; transform:translateX(0); }
+  .timeline-dot { flex-shrink:0; width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.4rem; position:relative; z-index:1; box-shadow:0 4px 16px rgba(0,0,0,.12); }
+  .timeline-body { flex:1; padding-top:8px; }
+  .timeline-date { font-family:'DM Mono',monospace; font-size:.66rem; letter-spacing:.12em; color:var(--warm-gray); text-transform:uppercase; margin-bottom:6px; }
+  .timeline-place { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; color:var(--dusk); margin-bottom:10px; line-height:1.2; }
+  .timeline-story { font-family:'Lora',serif; font-size:.95rem; line-height:1.8; color:#4a3f35; margin-bottom:12px; }
+  .timeline-story em { color:var(--rust); font-style:italic; }
+  .memory-tag { display:inline-block; background:var(--sand); border:1px solid rgba(139,58,15,.2); border-radius:20px; padding:4px 12px; font-family:'DM Mono',monospace; font-size:.62rem; letter-spacing:.08em; color:var(--canyon); text-transform:uppercase; margin:3px 3px 3px 0; }
+
+  /* AUDIO PLAYER */
+  .audio-player { display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,#1a1208,#2c1810); border-radius:14px; padding:14px 18px; margin:16px 0; box-shadow:0 4px 20px rgba(0,0,0,.2); }
+  .audio-play-btn { flex-shrink:0; width:44px; height:44px; border-radius:50%; background:var(--rust); border:none; color:#fff; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; box-shadow:0 3px 12px rgba(196,98,45,.4); }
+  .audio-play-btn:hover { background:#a0461f; transform:scale(1.08); }
+  .audio-play-btn.playing { background:#27AE60; }
+  .audio-info { flex:1; min-width:0; }
+  .audio-title { font-family:"DM Mono",monospace; font-size:.65rem; letter-spacing:.12em; color:rgba(242,232,217,.5); text-transform:uppercase; margin-bottom:4px; }
+  .audio-label { font-family:"Lora",serif; font-size:.88rem; color:var(--sand); font-style:italic; }
+  .audio-progress-wrap { flex:1; display:flex; flex-direction:column; gap:5px; }
+  .audio-bar { width:100%; height:3px; background:rgba(255,255,255,.15); border-radius:2px; cursor:pointer; position:relative; }
+  .audio-bar-fill { height:100%; background:var(--rust); border-radius:2px; width:0%; transition:width .1s; pointer-events:none; }
+  .audio-time { font-family:"DM Mono",monospace; font-size:.6rem; color:rgba(242,232,217,.35); text-align:right; }
+  .audio-waveform { display:flex; align-items:center; gap:2px; height:20px; }
+  .audio-waveform span { display:inline-block; width:2px; background:rgba(196,98,45,.5); border-radius:1px; transition:height .1s; }
+  .audio-waveform.active span { background:var(--rust); }
+  @keyframes wave1 { 0%,100%{height:4px} 50%{height:16px} }
+  @keyframes wave2 { 0%,100%{height:8px} 50%{height:4px} }
+  @keyframes wave3 { 0%,100%{height:12px} 50%{height:20px} }
+  @keyframes wave4 { 0%,100%{height:6px} 50%{height:14px} }
+  @keyframes wave5 { 0%,100%{height:16px} 50%{height:6px} }
+
+  /* COLLAGE */
+  .collage { margin-top:20px; }
+  .collage-hero { width:100%; border-radius:14px; overflow:hidden; margin-bottom:10px; box-shadow:0 6px 24px rgba(0,0,0,.15); cursor:pointer; }
+  .collage-hero img { width:100%; height:420px; object-fit:cover; object-position:center top; display:block; transition:transform .4s; }
+  .collage-hero:hover img { transform:scale(1.02); }
+  .collage-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .collage-thumb { border-radius:10px; overflow:hidden; aspect-ratio:1; cursor:pointer; box-shadow:0 3px 12px rgba(0,0,0,.12); }
+  .collage-thumb img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s; }
+  .collage-thumb:hover img { transform:scale(1.05); }
+  .photo-coming { background:var(--sand); border:2px dashed rgba(139,58,15,.2); border-radius:12px; padding:20px; text-align:center; margin-top:14px; font-family:'DM Mono',monospace; font-size:.68rem; color:var(--warm-gray); }
+
+  /* LIGHTBOX */
+  .mem-lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:9999; align-items:center; justify-content:center; padding:20px; }
+  .mem-lightbox.open { display:flex; }
+  .mem-lightbox img { max-width:calc(100% - 120px); max-height:90vh; border-radius:8px; object-fit:contain; }
+  .mem-lightbox-close { position:absolute; top:20px; right:24px; color:#fff; font-size:2rem; cursor:pointer; z-index:10; line-height:1; }
+  .mem-lb-nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.15); border:none; color:#fff; font-size:1.8rem; width:52px; height:52px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s; user-select:none; }
+  .mem-lb-nav:hover { background:rgba(255,255,255,.3); }
+  .mem-lb-nav:disabled { opacity:.2; cursor:default; }
+  .mem-lb-prev { left:16px; }
+  .mem-lb-next { right:16px; }
+  .mem-lb-counter { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,.5); font-family:"DM Mono",monospace; font-size:.75rem; letter-spacing:.1em; }
+
+  /* QUOTE */
+  .quote-section { background:var(--rust); padding:80px 20px; text-align:center; position:relative; overflow:hidden; }
+  .quote-section::before { content:'"'; position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-family:'Playfair Display',serif; font-size:20rem; color:rgba(255,255,255,.05); line-height:1; pointer-events:none; }
+  .quote-text { font-family:'Playfair Display',serif; font-size:clamp(1.4rem,3.5vw,2.2rem); color:var(--sand); font-style:italic; line-height:1.5; max-width:680px; margin:0 auto 20px; position:relative; z-index:1; }
+  .quote-attr { font-family:'DM Mono',monospace; font-size:.68rem; letter-spacing:.15em; color:rgba(242,232,217,.6); text-transform:uppercase; position:relative; z-index:1; }
+
+  /* HIGHLIGHTS */
+  .highlights-section { padding:80px 20px; max-width:900px; margin:0 auto; text-align:center; }
+  .highlights-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; margin-top:40px; text-align:left; }
+  .highlight-card { background:#fff; border-radius:16px; padding:24px; box-shadow:0 4px 20px rgba(0,0,0,.06); border:1px solid rgba(139,58,15,.08); transition:transform .2s,box-shadow .2s; }
+  .highlight-card:hover { transform:translateY(-4px); box-shadow:0 8px 32px rgba(0,0,0,.1); }
+  .highlight-icon { font-size:2rem; margin-bottom:12px; display:block; }
+  .highlight-title { font-family:'Playfair Display',serif; font-size:1.05rem; font-weight:700; color:var(--dusk); margin-bottom:8px; }
+  .highlight-text { font-family:'Lora',serif; font-size:.84rem; line-height:1.7; color:var(--warm-gray); }
+
+  /* FOOTER */
+  .footer { background:var(--ink); padding:48px 20px; text-align:center; }
+  .footer-title { font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--sand); font-style:italic; margin-bottom:8px; }
+  .footer-sub { font-family:'DM Mono',monospace; font-size:.65rem; letter-spacing:.15em; color:rgba(242,232,217,.3); text-transform:uppercase; }
+  .hearts { font-size:1.2rem; margin:16px 0; letter-spacing:.3em; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(6px)} }
+  @media(max-width:600px) { .timeline::before{left:22px} .timeline-dot{width:44px;height:44px;font-size:1.1rem} .hero-stats{gap:20px} }
+</style>
+</head>
+<body>
+
+<!-- LIGHTBOX -->
+<div class="mem-lightbox" id="mem-lightbox">
+  <span class="mem-lightbox-close" id="mem-lb-close">✕</span>
+  <button class="mem-lb-nav mem-lb-prev" id="mem-lb-prev">&#8592;</button>
+  <img id="mem-lightbox-img" src="" alt="">
+  <button class="mem-lb-nav mem-lb-next" id="mem-lb-next">&#8594;</button>
+  <div class="mem-lb-counter" id="mem-lb-counter"></div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-texture"></div>
+  <svg class="hero-map" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,200 Q300,150 600,220 T1200,180" fill="none" stroke="#fff" stroke-width="1" opacity=".4"/>
+    <path d="M0,300 Q400,260 700,320 T1200,280" fill="none" stroke="#fff" stroke-width="1" opacity=".3"/>
+    <path d="M0,400 Q350,360 650,410 T1200,380" fill="none" stroke="#fff" stroke-width="1" opacity=".2"/>
+    <path d="M200,0 Q230,350 210,700" fill="none" stroke="#fff" stroke-width=".8" opacity=".2"/>
+    <path d="M500,0 Q520,350 510,700" fill="none" stroke="#fff" stroke-width=".8" opacity=".15"/>
+    <path d="M850,0 Q870,350 860,700" fill="none" stroke="#fff" stroke-width=".8" opacity=".15"/>
+  </svg>
+  <div class="hero-content">
+    <p class="hero-eyebrow">March 30 – April 7, 2026 &nbsp;·&nbsp; California · Arizona · Utah</p>
+    <h1 class="hero-title">The Leone<br><em>Family Adventure</em></h1>
+    <p class="hero-sub">9 days. 5 souls. 1 Sprinter van. Countless memories.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><span class="hero-stat-num">9</span><span class="hero-stat-lbl">Days</span></div>
+      <div class="hero-stat"><span class="hero-stat-num">3</span><span class="hero-stat-lbl">States</span></div>
+      <div class="hero-stat"><span class="hero-stat-num">~2,500</span><span class="hero-stat-lbl">Miles</span></div>
+      <div class="hero-stat"><span class="hero-stat-num">5</span><span class="hero-stat-lbl">Leones</span></div>
+      <div class="hero-stat"><span class="hero-stat-num">∞</span><span class="hero-stat-lbl">YouTube videos</span></div>
+    </div>
+  </div>
+  <div class="scroll-hint">↓ &nbsp; scroll to explore</div>
+</section>
+
+<!-- ROUTE MAP -->
+<section class="route-section">
+  <p class="section-label">The Route</p>
+  <h2 class="section-title">Where We Went</h2>
+  <div class="route-map-container">
+    <svg class="route-svg" viewBox="0 0 1408 768" xmlns="http://www.w3.org/2000/svg"
+         role="img"
+         aria-label="Vintage parchment map of California, Nevada, Utah, and Arizona showing the Leone Family Adventure route: El Dorado Hills to Paso Robles to Sedona to Buckeye to Grand Canyon to Zion to Pismo Beach and home.">
+
+      <!-- Base map (clean parchment, no built-in route lines) -->
+      <image href="images/roadtrip-route-map.png" x="0" y="0" width="1408" height="768"/>
+
+      <!-- Cream halo behind the route line, so it stands out cleanly against the map -->
+      <path fill="none" stroke="#FBF6EE" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"
+            d="M 310 190 L 320 430 L 905 590 L 850 655 L 1080 425 L 950 300 L 325 500 Z"/>
+
+      <!-- Correct route line: EDH to Paso to Sedona to Buckeye to Grand Canyon to Zion to Pismo to home -->
+      <path fill="none" stroke="#A32030" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"
+            d="M 310 190 L 320 430 L 905 590 L 850 655 L 1080 425 L 950 300 L 325 500 Z"/>
+
+      <!-- Numbered stop markers (dark ink on cream, sized to be readable at 620px container width) -->
+      <g font-family="DM Mono,monospace" font-size="26" font-weight="700" text-anchor="middle" dominant-baseline="central">
+        <circle cx="310"  cy="190" r="24" fill="#1A1208" stroke="#FBF6EE" stroke-width="3"/>
+        <text   x="310"   y="190" fill="#FBF6EE">1</text>
+
+        <circle cx="320"  cy="430" r="24" fill="#1A1208" stroke="#FBF6EE" stroke-width="3"/>
+        <text   x="320"   y="430" fill="#FBF6EE">2</text>
+
+        <circle cx="905"  cy="590" r="24" fill="#1A1208" stroke="#FBF6EE" stroke-width="3"/>
+        <text   x="905"   y="590" fill="#FBF6EE">3</text>
+
+        <circle cx="850"  cy="655" r="24" fill="#1A1208" stroke="#FBF6EE" stroke-width="3"/>
+        <text   x="850"   y="655" fill="#FBF6EE">4</text>
+
+        <circle cx="1080" cy="425" r="24" fill="#1A1208" stroke="#FBF6EE" stroke-width="3"/>
+        <text   x="1080"  y="425" fill="#FBF6EE">5</text>
+
+        <circle cx="950"  cy="300" r="24" fill="#1A1208" stroke="#FBF6EE" stroke-width="3"/>
+        <text   x="950"   y="300" fill="#FBF6EE">6</text>
+
+        <circle cx="325"  cy="500" r="24" fill="#1A1208" stroke="#FBF6EE" stroke-width="3"/>
+        <text   x="325"   y="500" fill="#FBF6EE">7</text>
+      </g>
+
+    </svg>
+
+    <!-- Numbered stop legend below the map -->
+    <ol class="route-legend">
+      <li><span class="route-num">1</span> El Dorado Hills <em>· home base</em></li>
+      <li><span class="route-num">2</span> Paso Robles <em>· night 1 · wine country</em></li>
+      <li><span class="route-num">3</span> Sedona <em>· nights 2–3 · red rocks</em></li>
+      <li><span class="route-num">4</span> Buckeye <em>· night 3 · Gigi</em></li>
+      <li><span class="route-num">5</span> Grand Canyon <em>· night 4 · the edge</em></li>
+      <li><span class="route-num">6</span> Zion <em>· nights 5–7 · the favorite ★</em></li>
+      <li><span class="route-num">7</span> Pismo Beach <em>· nights 8–9 · Dana's birthday</em></li>
+    </ol>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section class="timeline-section">
+  <div class="timeline-header">
+    <p class="section-label" style="color:var(--warm-gray)">Day by Day</p>
+    <h2 class="section-title" style="color:var(--dusk)">Our Story</h2>
+  </div>
+  <div class="timeline">
+
+    <!-- THE DRIVE -->
+    <div class="timeline-entry" data-reveal>
+      <div class="timeline-dot" style="background:var(--sand);border:3px solid var(--warm-gray)">🚐</div>
+      <div class="timeline-body">
+        <p class="timeline-date">March 30 — Day 1</p>
+        <h3 class="timeline-place">The Great Departure</h3>
+        <p class="timeline-story">Every great adventure begins with someone loading the Sprinter at an unreasonable hour. Jay took the wheel and barely left it for the next nine days — <em>the unsung hero of the trip.</em> The kids settled in immediately, locked onto YouTube, and proceeded to watch what can only be described as the entirety of the internet. By day two they had genuinely run out of new videos to watch. The van became its own little world at 70mph.</p>
+        <span class="memory-tag">🚐 Sprinter life</span>
+        <span class="memory-tag">📺 YouTube marathon</span>
+        <span class="memory-tag">☕ Dad drove everything</span>
+        <div class="audio-player" id="intro-audio-player">
+          <button class="audio-play-btn" id="intro-play-btn" onclick="toggleAudio('intro')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Intro</div>
+            <div class="audio-label">The Leone Family Adventure</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="intro-bar" onclick="seekAudio(event,'intro')">
+              <div class="audio-bar-fill" id="intro-fill"></div>
+            </div>
+            <div class="audio-time" id="intro-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="intro-wave">
+            <span style="height:6px"></span><span style="height:10px"></span>
+            <span style="height:14px"></span><span style="height:8px"></span>
+            <span style="height:16px"></span><span style="height:10px"></span>
+            <span style="height:6px"></span><span style="height:12px"></span>
+          </div>
+          <audio id="intro-audio" src="audio/intro.mp3" preload="metadata"></audio>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO ROBLES -->
+    <div class="timeline-entry" data-reveal>
+      <div class="timeline-dot" style="background:linear-gradient(135deg,#722F37,#D4A843)">🍷</div>
+      <div class="timeline-body">
+        <p class="timeline-date">March 30 — Night 1</p>
+        <h3 class="timeline-place">Paso Robles & The Allegretto</h3>
+        <p class="timeline-story">The first night set the tone for the whole trip. The Leones checked into the <em>Allegretto Vineyard Resort</em> — a sun-drenched Italian villa dropped into the wine country of Paso Robles. Mosaic courtyards, vineyard views, art and antiques around every corner, including a massive ancient Sequoia cross-section that stopped everyone in their tracks. Dana walked in and immediately felt at home. This was her place.</p>
+        <p class="timeline-story">First order of business: dinner at <em>The Taste Craft Eatery</em> — a Guy Fieri favorite. The family committed fully, ordering every single one of his picks off the menu. Results were… mixed. Some were hits. Some were considerably less impressive. But that's the Guy Fieri experience — you order the whole menu and sort it out later.</p>
+        <p class="timeline-story">Then a winery visit where the kids kept themselves occupied playing Crazy Eights in the corner so the adults could actually enjoy their wine. Back at the resort: pool, hot tub, the kind of evening that makes you forget tomorrow is a 9-hour drive. <em>It was perfect.</em></p>
+        <span class="memory-tag">🍷 Allegretto Resort</span>
+        <span class="memory-tag">🍽️ Guy Fieri approved</span>
+        <span class="memory-tag">🃏 Crazy Eights</span>
+        <span class="memory-tag">🌲 Ancient Sequoia</span>
+        <span class="memory-tag">💕 Dana's kind of place</span>
+        <div class="audio-player" id="paso-audio-player">
+          <button class="audio-play-btn" id="paso-play-btn" onclick="toggleAudio('paso')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Story</div>
+            <div class="audio-label">Paso Robles &amp; The Allegretto</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="paso-bar" onclick="seekAudio(event,'paso')">
+              <div class="audio-bar-fill" id="paso-fill"></div>
+            </div>
+            <div class="audio-time" id="paso-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="paso-wave">
+            <span style="height:6px"></span><span style="height:10px"></span>
+            <span style="height:14px"></span><span style="height:8px"></span>
+            <span style="height:16px"></span><span style="height:10px"></span>
+            <span style="height:6px"></span><span style="height:12px"></span>
+          </div>
+          <audio id="paso-audio" src="audio/paso-robles.mp3" preload="metadata"></audio>
+        </div>
+        <div class="collage" data-gallery="paso">
+          <div class="collage-hero" onclick="memLightbox(0,'paso')">
+            <img src="photos/paso-robles/paso-robles-hero.jpg" alt="Dana at the Allegretto with the ancient Sequoia cross-section">
+          </div>
+          <div class="collage-grid">
+            <div class="collage-thumb" onclick="memLightbox(1,'paso')">
+              <img src="photos/paso-robles/paso-robles-01.jpg" alt="Jay and Dana at Taste Craft Eatery">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(2,'paso')">
+              <img src="photos/paso-robles/paso-robles-02.jpg" alt="Running through the Allegretto gardens">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(3,'paso')">
+              <img src="photos/paso-robles/paso-robles-03.jpg" alt="Pool time at the Allegretto">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(4,'paso')">
+              <img src="photos/paso-robles/paso-robles-04.jpg" alt="Jay with sliders and brussels sprouts">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(5,'paso')">
+              <img src="photos/paso-robles/paso-robles-05.jpg" alt="Dana eating a slider">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(6,'paso')">
+              <img src="photos/paso-robles/paso-robles-06.jpg" alt="Kid cutting the burger with fork and knife">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(7,'paso')">
+              <img src="photos/paso-robles/paso-robles-07.jpg" alt="Capri holding fry cross — Easter weekend">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(8,'paso')">
+              <img src="photos/paso-robles/paso-robles-08.jpg" alt="Jay and Dana at the Bottle Shop">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(9,'paso')">
+              <img src="photos/paso-robles/paso-robles-09.jpg" alt="Family selfie at Castoro Cellars">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(10,'paso')">
+              <img src="photos/paso-robles/paso-robles-10.jpg" alt="Kids playing cards at the winery">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(11,'paso')">
+              <img src="photos/paso-robles/paso-robles-11.jpg" alt="Dana and Capri at the Allegretto statue nook">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(12,'paso')">
+              <img src="photos/paso-robles/paso-robles-12.jpg" alt="Hot tub night at the Allegretto">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(13,'paso')">
+              <img src="photos/paso-robles/paso-robles-13.jpg" alt="Buddha statue in the Allegretto lobby">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(14,'paso')">
+              <img src="photos/paso-robles/paso-robles-14.jpg" alt="Kids playing chess in the Allegretto lobby">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEDONA & BUCKEYE -->
+    <!-- SEDONA -->
+    <div class="timeline-entry" data-reveal>
+      <div class="timeline-dot" style="background:linear-gradient(135deg,#C4622D,#D4A843)">🏜️</div>
+      <div class="timeline-body">
+        <p class="timeline-date">March 31 – April 1 — Days 2–3</p>
+        <h3 class="timeline-place">Sedona</h3>
+                <p class="timeline-story">Nobody told the Leones that driving into Sedona would feel like crossing into another dimension. One minute you're on a regular Arizona highway, squinting at scrubby desert, and then the road bends and suddenly — <em>red rock formations the size of office buildings</em>, glowing in the afternoon light like they've been on fire for ten million years. Everyone went quiet. Even the kids. Jay almost missed a turn.</p>
+        <p class="timeline-story">The town itself was a delight — charming streets, good energy, the kind of place where every other store sells crystals and the other half sells more crystals. That first evening they found a great little brewery, had an excellent dinner, and stepped out into the night ready to explore. At which point they discovered Sedona's one significant flaw: <em>it goes to bed at 8pm.</em> Every crystal store — and there were dozens — dark. Locked. Dana cupped her hands against the glass of at least three of them. The geodes weren't going anywhere. Tomorrow.</p>
+        <p class="timeline-story">The hike the next morning will go down in Leone family history as the moment they learned a crucial truth about their children: <em>they hate hiking.</em> To be clear, West Fork Trail is not a hike so much as a pleasant nature walk with some very photogenic creek crossings. It is the kind of trail that gets described as "easy" in guidebooks, the kind grandparents do. The Leone kids complained approximately from the first step. There were, to be fair, some genuinely spectacular bugs along the way — the kind that make everyone huddle together and stare — which produced a brief ceasefire. But the moment those bugs moved on, so did the grievances.</p>
+        <p class="timeline-story">The real triumph came after, when the crystal stores opened and Dana was finally unleashed. Everyone left with rocks. The kids, who had spent the morning complaining about a walk, were now enthusiastic geologists. Sedona has that effect. The family could have used another two days here — there's more of it to love than one short stop allows. <em>They'll be back. The crystals will be waiting.</em></p>
+        <span class="memory-tag">🏜️ West Fork Trail</span>
+        <span class="memory-tag">🪨 Red rock canyon</span>
+        <span class="memory-tag">🕳️ Hidden cave</span>
+        <span class="memory-tag">🍦 Uptown Sedona</span>
+        <div class="audio-player" id="sedona-audio-player">
+          <button class="audio-play-btn" id="sedona-play-btn" onclick="toggleAudio('sedona')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Story</div>
+            <div class="audio-label">Sedona</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="sedona-bar" onclick="seekAudio(event,'sedona')">
+              <div class="audio-bar-fill" id="sedona-fill"></div>
+            </div>
+            <div class="audio-time" id="sedona-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="sedona-wave">
+            <span style="height:6px"></span><span style="height:10px"></span>
+            <span style="height:14px"></span><span style="height:8px"></span>
+            <span style="height:16px"></span><span style="height:10px"></span>
+            <span style="height:6px"></span><span style="height:12px"></span>
+          </div>
+          <audio id="sedona-audio" src="audio/sedona.mp3" preload="metadata"></audio>
+        </div>
+        <div class="collage" data-gallery="sedona">
+          <div class="collage-hero" onclick="memLightbox(0,'sedona')">
+            <img src="photos/sedona/sedona-hero.jpg" alt="Leone family under the red rock canyon wall — West Fork">
+          </div>
+          <div class="collage-grid">
+            <div class="collage-thumb" onclick="memLightbox(1,'sedona')">
+              <img src="photos/sedona/sedona-01.jpg" alt="West Fork Oak Creek Canyon creek">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(2,'sedona')">
+              <img src="photos/sedona/sedona-02.jpg" alt="Family at Sedona red rock trailhead">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(3,'sedona')">
+              <img src="photos/sedona/sedona-03.jpg" alt="Family on West Fork trail">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(4,'sedona')">
+              <img src="photos/sedona/sedona-04.jpg" alt="Sedona red rocks wide view">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(5,'sedona')">
+              <img src="photos/sedona/sedona-05.jpg" alt="Family selfie on bridge">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(6,'sedona')">
+              <img src="photos/sedona/sedona-06.jpg" alt="Jay and son at the cave">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(7,'sedona')">
+              <img src="photos/sedona/sedona-07.jpg" alt="Dana and kid at the cave">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(8,'sedona')">
+              <img src="photos/sedona/sedona-08.jpg" alt="Kid crossing the creek">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(9,'sedona')">
+              <img src="photos/sedona/sedona-09.jpg" alt="Family crossing the stream">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(10,'sedona')">
+              <img src="photos/sedona/sedona-10.jpg" alt="Dana and kid at the creek">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(11,'sedona')">
+              <img src="photos/sedona/sedona-11.jpg" alt="Kid in hollow tree">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(12,'sedona')">
+              <img src="photos/sedona/sedona-12.jpg" alt="Kid in hollow tree 2">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(13,'sedona')">
+              <img src="photos/sedona/sedona-13.jpg" alt="Kid with gold gorilla statue">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(14,'sedona')">
+              <img src="photos/sedona/sedona-14.jpg" alt="Driving into Sedona">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUCKEYE -->
+    <div class="timeline-entry" data-reveal>
+      <div class="timeline-dot" style="background:linear-gradient(135deg,#D4A843,#C4622D)">👫</div>
+      <div class="timeline-body">
+        <p class="timeline-date">April 1 — Day 3</p>
+        <h3 class="timeline-place">Buckeye</h3>
+                <p class="timeline-story">Gigi isn't technically family. But she has been there since the day Dana was born, best friend to Dana's mom for longer than most people have been alive — and at 93 years old, she is very much the real thing. She lives in a beautiful home in a 55+ community in Buckeye, Arizona, and when the Leones pulled up, dinner was already in the oven. <em>Of course it was.</em> That's Gigi.</p>
+        <p class="timeline-story">They ate, caught up, laughed, and then Gigi — with the energy of someone a full generation younger — insisted on showing them the clubhouse. Gym, restaurant, pools. Truly impressive setup. There was just one small complication: <em>55+ communities do not love children.</em> This became clear when a fellow resident — call her the Clubhouse Karen — spotted the tour in progress and informed Phyllis, loudly, that kids were not allowed in here. The pools were empty. It was evening. No matter. The Leones were escorted out.</p>
+        <p class="timeline-story">Which turned out to be fine, because the outdoor restaurant patio was honestly better anyway. The adults settled in for evening cocktails and actual conversation while the kids, left to their own devices, invented a game called Capture the Rock and then graduated to giant Jenga. Nobody questioned the rules of Capture the Rock. It seemed to work.</p>
+        <p class="timeline-story">Back at Gigi's house, they played Yahtzee. It was supposed to be a relaxing wind-down. Instead it was a full commitment — the kind of game that keeps going just long enough that you realize you're too tired to stop and too invested to quit. They basically passed out mid-round. A perfect night's sleep followed. Jay and Dana were up early the next morning for a sunrise hike up the giant staircase right in the community — a beautiful climb with wide views over the Phoenix suburbs glowing in the morning light. Coffee after. Photos taken. Bags packed. <em>Then on to the Grand Canyon.</em></p>
+        <p class="timeline-story">It was a short stop but the right one. Gigi is 93 and you would never guess it. Seeing her was the whole point.</p>
+        <span class="memory-tag">💛 Gigi — 93 & going strong</span>
+        <span class="memory-tag">🚨 Escorted out by Karen</span>
+        <span class="memory-tag">🪨 Capture the Rock</span>
+        <span class="memory-tag">🎲 Yahtzee til we crashed</span>
+        <span class="memory-tag">🌅 Sunrise stair hike</span>
+        <div class="audio-player" id="buckeye-audio-player">
+          <button class="audio-play-btn" id="buckeye-play-btn" onclick="toggleAudio('buckeye')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Story</div>
+            <div class="audio-label">Buckeye &amp; Gigi</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="buckeye-bar" onclick="seekAudio(event,'buckeye')">
+              <div class="audio-bar-fill" id="buckeye-fill"></div>
+            </div>
+            <div class="audio-time" id="buckeye-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="buckeye-wave">
+            <span style="height:6px"></span><span style="height:10px"></span>
+            <span style="height:14px"></span><span style="height:8px"></span>
+            <span style="height:16px"></span><span style="height:10px"></span>
+            <span style="height:6px"></span><span style="height:12px"></span>
+          </div>
+          <audio id="buckeye-audio" src="audio/buckeye.mp3" preload="metadata"></audio>
+        </div>
+        <div class="collage" data-gallery="buckeye">
+          <div class="collage-hero" onclick="memLightbox(0,'buckeye')">
+            <img src="photos/buckeye/buckeye-hero.jpg" alt="Leone family with Grandma in Buckeye backyard">
+          </div>
+          <div class="collage-grid">
+            <div class="collage-thumb" onclick="memLightbox(1,'buckeye')">
+              <img src="photos/buckeye/buckeye-01.jpg" alt="Grandma and kids in the Sprinter">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(2,'buckeye')">
+              <img src="photos/buckeye/buckeye-02.jpg" alt="Grandma relaxing on patio at sunset">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(3,'buckeye')">
+              <img src="photos/buckeye/buckeye-03.jpg" alt="Dana and Grandma hugging at night">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(4,'buckeye')">
+              <img src="photos/buckeye/buckeye-04.jpg" alt="Grandma and grandson having tea">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(5,'buckeye')">
+              <img src="photos/buckeye/buckeye-05.jpg" alt="Jay and Dana sunset hike selfie">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(6,'buckeye')">
+              <img src="photos/buckeye/buckeye-06.jpg" alt="Steep stair climb with valley views">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(7,'buckeye')">
+              <img src="photos/buckeye/buckeye-07.jpg" alt="Rusty animal sculpture">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(8,'buckeye')">
+              <img src="photos/buckeye/buckeye-08.jpg" alt="Rooster on tower sculpture">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(9,'buckeye')">
+              <img src="photos/buckeye/buckeye-09.jpg" alt="Family at cactus mural">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(10,'buckeye')">
+              <img src="photos/buckeye/buckeye-10.jpg" alt="Family playing giant Jenga on patio">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- GRAND CANYON -->
+    <div class="timeline-entry" data-reveal>
+      <div class="timeline-dot" style="background:linear-gradient(135deg,#8B3A0F,#C4622D)">🏔️</div>
+      <div class="timeline-body">
+        <p class="timeline-date">April 2 — Day 4</p>
+        <h3 class="timeline-place">The Grand Canyon</h3>
+        <p class="timeline-story">There's nothing that can prepare you for the Grand Canyon — and yet it still manages to be exactly what you expected and nothing like it at the same time. A giant, ancient, windy hole in the earth with a river threading through the bottom. <em>Magnificent. Terrifying. Real.</em></p>
+        <p class="timeline-story">The most memorable part? The edge. The wind was whipping that day, adding a whole new dimension. Jay is happy to report that all three Leone kids have a perfectly healthy sense of mortality — they wanted absolutely nothing to do with the rim. Meanwhile, other visitors were dangling their feet over the edge for Instagram. A gust of wind away from a very different kind of story.</p>
+        <span class="memory-tag">😬 Terrifying edge</span>
+        <span class="memory-tag">💨 Windy &amp; cold</span>
+        <span class="memory-tag">🎟️ Free with park pass</span>
+        <span class="memory-tag">👨‍👧‍👦 Kids stayed back</span>
+        <span class="memory-tag">🍔 The Burger Incident</span>
+
+        <div style="background:linear-gradient(135deg,#fff8f4,#fff3ee);border-left:4px solid var(--rust);border-radius:0 12px 12px 0;padding:18px 20px;margin:16px 0;box-shadow:0 3px 12px rgba(196,98,45,.08);">
+          <p style="font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.12em;color:var(--rust);text-transform:uppercase;margin-bottom:8px;">🍔 The Burger Incident — A Story in Three Acts</p>
+          <p class="timeline-story" style="margin-bottom:10px;">After the sunset hike, the family headed to the lodge cafeteria for dinner — a surprisingly modern setup with big screens, a full bar, and table service. Everyone ordered burgers. Simple enough.</p>
+          <p class="timeline-story" style="margin-bottom:10px;"><em>Act One: The Problem.</em> Capri's burger arrived with melted cheese — fully melted, worked into every crevice of the patty. Capri does not do cheese. She took it in stride, as she always does. "I can just scrape it off," she said. Anyone who has tried to scrape melted cheese off a burger knows how that goes.</p>
+          <p class="timeline-story" style="margin-bottom:10px;"><em>Act Two: The Genius.</em> Perrisi had been quietly observing. Her burger, as fate would have it, had arrived with two cold slices of what appeared to be Velveeta — unmelted, sitting right on top, practically gift-wrapped for removal. She spoke up without a moment's hesitation. <em>"Capri, on mine the cheese isn't melted. It just peels right off — want to swap?"</em> Jay and Dana looked at each other. Was this generosity? Was this strategy? Was Perrisi simply the most perceptive person at the table? <em>An extraordinary gesture either way.</em></p>
+          <p class="timeline-story" style="margin-bottom:10px;"><em>Act Three: The Twist.</em> The swap was made. Perrisi peeled her Velveeta slabs clean off and everyone ate their burgers. Several hours later, in the dead of night, poor Capri saw that burger again. All over the hotel room. <em>Not a pretty sight.</em></p>
+          <p class="timeline-story" style="margin-bottom:0;font-style:italic;color:var(--warm-gray);">Did Perrisi know something was wrong with Capri's burger all along? We may never know. But the cheese situation was undeniably in her favor from the start.</p>
+        </div>
+
+        <div style="background:linear-gradient(135deg,#fff8f4,#fff3ee);border-left:4px solid var(--canyon);border-radius:0 12px 12px 0;padding:18px 20px;margin:16px 0;box-shadow:0 3px 12px rgba(139,58,15,.08);">
+          <p style="font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.12em;color:var(--canyon);text-transform:uppercase;margin-bottom:8px;">🍔 The Burger Incident — Part Two: The Sequel Nobody Asked For</p>
+          <p class="timeline-story" style="margin-bottom:10px;">Here's the thing about bad burgers: they're not always done with you when you think they are.</p>
+          <p class="timeline-story" style="margin-bottom:10px;">Capri's midnight ordeal was well documented. What was not immediately known — and only revealed during the five-hour drive to Zion the next morning — was that <em>Dana had also been a victim.</em> A quieter victim. A more dignified victim. But a victim nonetheless.</p>
+          <p class="timeline-story" style="margin-bottom:10px;">The details will be kept sparse out of respect and basic decency. What can be said is this: Dana's symptoms manifested in a <em>different direction</em> than Capri's. And those symptoms made themselves known somewhere around mile forty of a five-hour drive through the Utah desert, with no rest stop in immediate sight.</p>
+          <p class="timeline-story" style="margin-bottom:0;font-style:italic;color:var(--warm-gray);">The windows were down for most of the drive to Zion. Everyone agreed the fresh air was lovely. Nobody said anything else about it. The Sprinter van, as always, soldiered on. Some things are best left between a family and the open road.</p>
+        </div>
+        <div class="audio-player" id="gc-audio-player">
+          <button class="audio-play-btn" id="gc-play-btn" onclick="toggleAudio('gc')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Story</div>
+            <div class="audio-label">The Grand Canyon</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="gc-bar" onclick="seekAudio(event,'gc')">
+              <div class="audio-bar-fill" id="gc-fill"></div>
+            </div>
+            <div class="audio-time" id="gc-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="gc-wave">
+            <span style="height:6px;animation:none"></span>
+            <span style="height:10px;animation:none"></span>
+            <span style="height:14px;animation:none"></span>
+            <span style="height:8px;animation:none"></span>
+            <span style="height:16px;animation:none"></span>
+            <span style="height:10px;animation:none"></span>
+            <span style="height:6px;animation:none"></span>
+            <span style="height:12px;animation:none"></span>
+          </div>
+          <audio id="gc-audio" src="audio/grand-canyon.mp3" preload="metadata"></audio>
+        </div>
+
+        <div class="collage" data-gallery="gc">
+          <div class="collage-hero" onclick="memLightbox(0,'gc')">
+            <img src="photos/grand-canyon/grand-canyon-hero.jpg" alt="The Leone family at the Grand Canyon South Rim">
+          </div>
+          <div class="collage-grid">
+            <div class="collage-thumb" onclick="memLightbox(1,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-01.jpg" alt="Grand Canyon wide view">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(2,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-02.jpg" alt="Canyon layers">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(3,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-03.jpg" alt="Colorado River below">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(4,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-04.jpg" alt="Canyon warm tones">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(5,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-05.jpg" alt="Layered buttes">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(6,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-06.jpg" alt="Dana selfie at the rim">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(7,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-07.jpg" alt="Grand Canyon NPS plaque">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(8,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-08.jpg" alt="Canyon at dusk">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(9,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-09.jpg" alt="Jay and Dana sunset selfie">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(10,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-10.jpg" alt="Family sunset selfie">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(11,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-11.jpg" alt="Canyon through trees">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(12,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-12.jpg" alt="Dana and kids at railing">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(13,'gc')">
+              <img src="photos/grand-canyon/grand-canyon-13.jpg" alt="Hermits Rest sign">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZION -->
+    <!-- ZION -->
+    <div class="timeline-entry" data-reveal>
+      <div class="timeline-dot" style="background:linear-gradient(135deg,#4A90A4,#7D9B76)">⭐</div>
+      <div class="timeline-body">
+        <p class="timeline-date">April 3–5 — Days 5–7</p>
+        <h3 class="timeline-place">Zion — The Favorite</h3>
+                <p class="timeline-story">Zion hit differently from everything that came before it. The canyon walls — red and white and impossibly tall — the Virgin River threading through the valley floor, the charming town of Springdale right at the gate with its good restaurants, clean streets, and shops that actually stayed open past 8pm. From the moment they arrived, everyone felt it. <em>This was the one.</em></p>
+
+        <p class="timeline-story">And then came the audible. The Leones had been moving fast — barely a full day anywhere, windows down, Sprinter in drive, next stop, go. By the time they reached Zion, the math of what came next had started to feel insane: drive four hours to Capitol Reef, sleep, then eleven and a half hours straight to Pismo Beach. Jay looked at the map. Dana looked at Jay. The kids looked unconscious. <em>They called it.</em> Capitol Reef was out. One more night in Zion.</p>
+
+        <p class="timeline-story">The small problem: no hotel. The search began in earnest — calls to every property in Springdale, calls to friends who might know someone near Las Vegas as a fallback, the whole operation. It was Easter weekend, spring break, and every room in the area had been booked since February. And then, somehow: a Best Western with availability. Not the fanciest room they'd ever slept in. It didn't matter. It had beds, it had a pool, and it was <em>right there.</em> The kids were in the water within twenty minutes of check-in.</p>
+
+        <p class="timeline-story">With a real base of operations established, the family did two more hikes — which, to be clear, the kids still complained about, but with slightly less conviction now that they knew how the day would end. The second hike had real climbing involved, some narrow and precarious pathways, the kind of trail that demands full attention. Everyone rose to it. Along the way, someone started a game: <em>find the coolest rock</em> and <em>find the rock that looks most like a heart.</em> This was, it turned out, the secret to hiking with children. Give them a mission. The complaints evaporated. Pockets filled with rocks. Vinny found a geode — a real one — and has been promised it will be cracked open when they get home.</p>
+
+        <p class="timeline-story">Crystal shopping followed, naturally. Multiple stores, serious deliberation, everyone left with something. The town of Springdale delivered on every front — great food, the Whiptail Grill for dinner with those canyon walls glowing gold behind it, the kids piling into an old wagon outside Hoodoos General Store like they'd been waiting their whole lives to do exactly that.</p>
+
+        <p class="timeline-story">The last morning was Easter Sunday. Someone had packed bunny ears — nobody is taking credit for this but everyone is glad they did. The whole family wore them on the morning walk along the trail. Other hikers stopped. People laughed. Strangers wished them Happy Easter. One man said it was the best thing he'd seen all week. The Leones brought a little bit of something extra to Zion that morning, and the mountain gave it right back. <em>They'll go back. That's already decided.</em></p>
+        <span class="memory-tag">⭐ Trip favorite</span>
+        <span class="memory-tag">📣 Called the audible</span>
+        <span class="memory-tag">🏨 Best Western saves the day</span>
+        <span class="memory-tag">🪨 Find the heart rock</span>
+        <span class="memory-tag">💎 Vinny's geode</span>
+        <span class="memory-tag">🐰 Easter bunny ears</span>
+        <span class="memory-tag">✅ Going back. Period.</span>
+        <div class="audio-player" id="zion-audio-player">
+          <button class="audio-play-btn" id="zion-play-btn" onclick="toggleAudio('zion')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Story</div>
+            <div class="audio-label">Zion — The Favorite</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="zion-bar" onclick="seekAudio(event,'zion')">
+              <div class="audio-bar-fill" id="zion-fill"></div>
+            </div>
+            <div class="audio-time" id="zion-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="zion-wave">
+            <span style="height:6px"></span><span style="height:10px"></span>
+            <span style="height:14px"></span><span style="height:8px"></span>
+            <span style="height:16px"></span><span style="height:10px"></span>
+            <span style="height:6px"></span><span style="height:12px"></span>
+          </div>
+          <audio id="zion-audio" src="audio/zion.mp3" preload="metadata"></audio>
+        </div>
+        <div class="collage" data-gallery="zion">
+          <div class="collage-hero" onclick="memLightbox(0,'zion')">
+            <img src="photos/zion/zion-hero.jpg" alt="Leone family arms wide open at Zion viewpoint">
+          </div>
+          <div class="collage-grid">
+            <div class="collage-thumb" onclick="memLightbox(1,'zion')">
+              <img src="photos/zion/zion-01.jpg" alt="Red rocks collected on a bench">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(2,'zion')">
+              <img src="photos/zion/zion-02.jpg" alt="Virgin River flowing through Zion canyon">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(3,'zion')">
+              <img src="photos/zion/zion-03.jpg" alt="Red canyon wall looking straight up">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(4,'zion')">
+              <img src="photos/zion/zion-04.jpg" alt="Three kids on a big red boulder">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(5,'zion')">
+              <img src="photos/zion/zion-05.jpg" alt="Kid squeezed into red rock cave">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(6,'zion')">
+              <img src="photos/zion/zion-06.jpg" alt="Kid sitting in red rock alcove">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(7,'zion')">
+              <img src="photos/zion/zion-07.jpg" alt="Waterfall mist with sun flare over canyon">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(8,'zion')">
+              <img src="photos/zion/zion-08.jpg" alt="Tiny solo climber on massive Zion canyon wall">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(9,'zion')">
+              <img src="photos/zion/zion-09.jpg" alt="Family portrait at canyon viewpoint">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(10,'zion')">
+              <img src="photos/zion/zion-10.jpg" alt="Dana at Hummingbird Lane sign">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(11,'zion')">
+              <img src="photos/zion/zion-11.jpg" alt="Family on bridge over the Virgin River">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(12,'zion')">
+              <img src="photos/zion/zion-12.jpg" alt="Three kids on boulders with canyon behind">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(13,'zion')">
+              <img src="photos/zion/zion-13.jpg" alt="Two kids in a rock crevice">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(14,'zion')">
+              <img src="photos/zion/zion-14.jpg" alt="Capri tucked into a rock cave">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(15,'zion')">
+              <img src="photos/zion/zion-15.jpg" alt="Three kids in slot canyon beside tree">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(16,'zion')">
+              <img src="photos/zion/zion-16.jpg" alt="Perrisi warrior pose with hiking stick">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(17,'zion')">
+              <img src="photos/zion/zion-17.jpg" alt="Capri on the red trail with hiking stick">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(18,'zion')">
+              <img src="photos/zion/zion-18.jpg" alt="Dana and kids selfie with canyon background">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(19,'zion')">
+              <img src="photos/zion/zion-19.jpg" alt="Son perched in twisted tree roots">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(20,'zion')">
+              <img src="photos/zion/zion-20.jpg" alt="Girls in matching outfits by cactus sculpture — Springdale">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(21,'zion')">
+              <img src="photos/zion/zion-21.jpg" alt="Son at Whiptail Grill sign at golden hour">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(22,'zion')">
+              <img src="photos/zion/zion-22.jpg" alt="Kids in old wagon outside Hoodoos General Store">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(23,'zion')">
+              <img src="photos/zion/zion-23.jpg" alt="Three kids in pajamas on hotel bed — Zion art on wall">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(24,'zion')">
+              <img src="photos/zion/zion-24.jpg" alt="Perrisi leaping on trail in Easter bunny ears">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(25,'zion')">
+              <img src="photos/zion/zion-25.jpg" alt="Dana and Capri bunny ear piggyback selfie">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(26,'zion')">
+              <img src="photos/zion/zion-26.jpg" alt="Family at the Zion National Park entrance sign">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(27,'zion')">
+              <img src="photos/zion/zion-27.jpg" alt="Beautiful plated dish at Springdale restaurant">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(28,'zion')">
+              <img src="photos/zion/zion-28.jpg" alt="Whole family in Easter bunny ears on the Zion trail">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- PISMO BEACH -->
+    <div class="timeline-entry" data-reveal>
+      <div class="timeline-dot" style="background:linear-gradient(135deg,#4A90A4,#2980b9)">🌊</div>
+      <div class="timeline-body">
+        <p class="timeline-date">April 6–7 — Days 8–9</p>
+        <h3 class="timeline-place">Pismo Beach — Dana's Place</h3>
+                <p class="timeline-story">Nobody in the Leone family had ever been to Pismo Beach. This turns out to have been a significant oversight. Because Pismo Beach is exactly what a beach is supposed to be — wide, flat, the sand going on forever in both directions, the water actually warm enough to enjoy, the weather the kind of sunny and perfect that feels like it was arranged specifically for you. Dana stepped onto the sand and visibly exhaled. <em>This is the one.</em> The inland mountains were beautiful. This was home.</p>
+
+        <p class="timeline-story">And for the kids — perhaps most importantly — <em>no hiking required.</em> Just beach. Shells to collect, holes to dig, waves to watch, sand to sit in. No trail, no elevation gain, no parental optimism about how it's "not that far." The Leone children were finally, completely, entirely on board with the day's agenda. Jay noted this with quiet satisfaction.</p>
+
+        <p class="timeline-story">The town itself was a gem — small, walkable, great food, fun shops, the kind of place that takes about twenty minutes to walk end to end and somehow still has everything you need. One day was clearly not going to be enough. Another audible was called. Two nights. Which meant that Tuesday — the second day — landed on Dana's birthday, and she got to spend it exactly where she wanted to be. <em>Not bad planning for something that wasn't planned at all.</em></p>
+
+        <p class="timeline-story">One evening they discovered the billiard hall downtown — a massive, old-school room that looked like it might have been a theater in a previous life, now packed with pool tables, other games, a serious beer selection, and good food. The whole family went. Air hockey was played. Pool was played. New friends were made — that part of the evening is Dana's story to tell, and she tells it well. The kind of night that happens when you stop planning and just walk through an interesting-looking door.</p>
+
+        <p class="timeline-story">The hotel was right on the beach with a balcony overlooking the ocean. They slept with the doors open and let the sound of the waves do the rest. Jay and Dana were up early for a long beach walk while the kids — true to form — remained horizontal. The afternoon was beach and shopping. Dana did yoga on the sand, which was lovely, and even recruited the kids briefly, which was ambitious.</p>
+
+        <p class="timeline-story">And then there was the chair. The food on this trip had been, by any measure, exceptional. Plentiful. Perhaps <em>aggressively</em> plentiful. Nine days of breweries and sliders and Grand Canyon cafeterias and Zion restaurants will, it turns out, take a toll. The Tommy Bahama beach chair never saw it coming. Dana sat down. The chair made a decision. It was over quickly. <em>Dana is going to need new yoga pants. Jay is going on a diet. The chair is gone but not forgotten.</em></p>
+
+        <p class="timeline-story">Day nine. Nine days, three states, twenty-five hundred miles, one Sprinter van, five Leones, and more memories than any of them will ever fully be able to count. The drive home was an easy five hours. Everyone slept. The van rolled back into El Dorado Hills, and just like that — it was over. <em>Until next time.</em></p>
+        <span class="memory-tag">🎂 Dana's birthday</span>
+        <span class="memory-tag">🌊 Beach is home</span>
+        <span class="memory-tag">🎱 Billiards hall adventure</span>
+        <span class="memory-tag">🧘 Beach yoga</span>
+        <span class="memory-tag">💀 RIP Tommy Bahama chair</span>
+        <span class="memory-tag">🌅 Perfect ending</span>
+        <div class="audio-player" id="pismo-audio-player">
+          <button class="audio-play-btn" id="pismo-play-btn" onclick="toggleAudio('pismo')">▶</button>
+          <div class="audio-info">
+            <div class="audio-title">Narrated Story</div>
+            <div class="audio-label">Pismo Beach — Dana's Place</div>
+          </div>
+          <div class="audio-progress-wrap">
+            <div class="audio-bar" id="pismo-bar" onclick="seekAudio(event,'pismo')">
+              <div class="audio-bar-fill" id="pismo-fill"></div>
+            </div>
+            <div class="audio-time" id="pismo-time">0:00</div>
+          </div>
+          <div class="audio-waveform" id="pismo-wave">
+            <span style="height:6px"></span><span style="height:10px"></span>
+            <span style="height:14px"></span><span style="height:8px"></span>
+            <span style="height:16px"></span><span style="height:10px"></span>
+            <span style="height:6px"></span><span style="height:12px"></span>
+          </div>
+          <audio id="pismo-audio" src="audio/pismo-beach.mp3" preload="metadata"></audio>
+        </div>
+        <div class="collage" data-gallery="pismo">
+          <div class="collage-hero" onclick="memLightbox(0,'pismo')">
+            <img src="photos/pismo-beach/pismo-night-sign-selfie.jpg" alt="Leone family selfie in front of the lit Pismo Beach sign at night">
+          </div>
+          <div class="collage-grid">
+            <div class="collage-thumb" onclick="memLightbox(1,'pismo')">
+              <img src="photos/pismo-beach/pismo-easter-sand.jpg" alt="Leone family in Easter bunny ears with Leone written in the sand">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(2,'pismo')">
+              <img src="photos/pismo-beach/pismo-under-pier.jpg" alt="Full Leone family portrait under the Pismo pier">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(3,'pismo')">
+              <img src="photos/pismo-beach/pismo-easter-bunny-ears-beach.jpg" alt="Family with bunny ears on the beach, Easter morning">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(4,'pismo')">
+              <img src="photos/pismo-beach/pismo-kids-bunny-ears-hotel.jpg" alt="Three kids in pajamas and bunny ears sitting on the hotel bed">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(5,'pismo')">
+              <img src="photos/pismo-beach/pismo-yoga-dancer.jpg" alt="Dana doing Natarajasana dancer pose on the beach with the pier behind her">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(6,'pismo')">
+              <img src="photos/pismo-beach/pismo-yoga-lotus.jpg" alt="Dana in lotus pose meditating on the beach">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(7,'pismo')">
+              <img src="photos/pismo-beach/pismo-family-yoga.jpg" alt="Dana meditating while kids do their own yoga poses around her on the beach">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(8,'pismo')">
+              <img src="photos/pismo-beach/pismo-kids-sandcastles.jpg" alt="Three kids building sand castles with the Pismo pier behind them">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(9,'pismo')">
+              <img src="photos/pismo-beach/pismo-kids-architecture.jpg" alt="Two kids posing in front of white lattice architecture near the beach">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(10,'pismo')">
+              <img src="photos/pismo-beach/pismo-jay-burger.jpg" alt="Jay fully committed to a pier burger — Please Do Not Feed the Birds sign above">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(11,'pismo')">
+              <img src="photos/pismo-beach/pismo-couple-balcony.jpg" alt="Jay and Dana on the hotel balcony with the beach and pier behind them">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(12,'pismo')">
+              <img src="photos/pismo-beach/pismo-sunset-selfie.jpg" alt="Jay and Dana selfie on the balcony with golden sunset over the Pismo pier">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(13,'pismo')">
+              <img src="photos/pismo-beach/pismo-sandcastle-hotel-sign.jpg" alt="Three kids posing by the Sandcastle Hotel on the Beach sign">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(14,'pismo')">
+              <img src="photos/pismo-beach/pismo-checkers-fireplace.jpg" alt="Two kids playing giant checkers by the fireplace in the hotel lobby">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(15,'pismo')">
+              <img src="photos/pismo-beach/pismo-rip-chair.jpg" alt="The Tommy Bahama beach chair — destroyed. RIP.">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(16,'pismo')">
+              <img src="photos/pismo-beach/pismo-yogurt-shop.jpg" alt="Family with ice cream cups outside Pismo Yogurt Ice Cream shop">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(17,'pismo')">
+              <img src="photos/pismo-beach/pismo-surf-mural.jpg" alt="Kids in front of the Pismo Beach surf mural">
+            </div>
+            <div class="collage-thumb" onclick="memLightbox(18,'pismo')">
+              <img src="photos/pismo-beach/pismo-mosaic-mural.jpg" alt="Dana and kids in front of the Pismo Beach mosaic tile mural at 100 Pomeroy">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- QUOTE -->
+<section class="quote-section">
+  <p class="quote-text">"We weren't really getting to experience some of the places… so we slowed down. And that was the best decision we made."</p>
+  <p class="quote-attr">— The Leone Family, Spring 2026</p>
+</section>
+
+<!-- HIGHLIGHTS -->
+<section class="highlights-section">
+  <p class="section-label" style="color:var(--warm-gray)">The List</p>
+  <h2 class="section-title" style="color:var(--dusk)">Things We'll Never Forget</h2>
+  <div class="highlights-grid">
+    <div class="highlight-card"><span class="highlight-icon">😬</span><h4 class="highlight-title">People at the Edge</h4><p class="highlight-text">Watching strangers dangle their feet over the Grand Canyon rim in 40mph winds. Pure terror from a safe distance.</p></div>
+    <div class="highlight-card"><span class="highlight-icon">📺</span><h4 class="highlight-title">The YouTube Apocalypse</h4><p class="highlight-text">Three kids who watched so much YouTube they literally ran out of new videos. The internet has limits after all.</p></div>
+    <div class="highlight-card"><span class="highlight-icon">🛎️</span><h4 class="highlight-title">The Easter Weekend Hunt</h4><p class="highlight-text">Every hotel in Zion was booked. Phones were worked. Friends were called. A Best Western saved the day.</p></div>
+    <div class="highlight-card"><span class="highlight-icon">🎂</span><h4 class="highlight-title">Birthday at the Beach</h4><p class="highlight-text">Dana's birthday landed on Pismo Beach. Salt air, waves, a billiards hall, and the whole family together. Perfect.</p></div>
+    <div class="highlight-card"><span class="highlight-icon">⭐</span><h4 class="highlight-title">Zion Wins</h4><p class="highlight-text">Ask any Leone which stop won the trip. The answer is unanimous. Zion wasn't just beautiful — it was where the trip found its soul.</p></div>
+    <div class="highlight-card"><span class="highlight-icon">🍷</span><h4 class="highlight-title">The Allegretto</h4><p class="highlight-text">Night one at an Italian vineyard resort. Dana was in heaven. The kids played Crazy Eights so the adults could drink wine in peace.</p></div>
+    <div class="highlight-card"><span class="highlight-icon">🍔</span><h4 class="highlight-title">The Guy Fieri Experiment</h4><p class="highlight-text">Ordered every Guy Fieri pick at The Taste Craft Eatery. Results were mixed. Commitment was not.</p></div>
+    <div class="highlight-card"><span class="highlight-icon">🚐</span><h4 class="highlight-title">Dad at the Wheel</h4><p class="highlight-text">Jay drove the vast majority of 2,500 miles. The Sprinter van rolled on, fueled by coffee and a very patient driver.</p></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p class="footer-title">The Leone Family</p>
+  <div class="hearts">🧡 🤍 🧡</div>
+  <p class="footer-sub">Spring Break 2026 &nbsp;·&nbsp; El Dorado Hills, CA</p>
+</footer>
+
+<script>
+// ── AUDIO PLAYERS ──
+const audioPlayers = {};
+
+function toggleAudio(id) {
+  const audio = document.getElementById(id + '-audio');
+  const btn = document.getElementById(id + '-play-btn');
+  const wave = document.getElementById(id + '-wave');
+
+  // Pause any other playing audio
+  Object.keys(audioPlayers).forEach(key => {
+    if (key !== id && audioPlayers[key]) {
+      audioPlayers[key].pause();
+      document.getElementById(key + '-play-btn').textContent = '▶';
+      document.getElementById(key + '-play-btn').classList.remove('playing');
+      setWaveActive(key, false);
+    }
+  });
+
+  audioPlayers[id] = audio;
+
+  if (audio.paused) {
+    audio.play();
+    btn.textContent = '⏸';
+    btn.classList.add('playing');
+    setWaveActive(id, true);
+  } else {
+    audio.pause();
+    btn.textContent = '▶';
+    btn.classList.remove('playing');
+    setWaveActive(id, false);
+  }
+}
+
+function setWaveActive(id, active) {
+  const wave = document.getElementById(id + '-wave');
+  if (!wave) return;
+  const anims = ['wave1','wave2','wave3','wave4','wave5','wave2','wave3','wave1'];
+  const heights = [6,10,14,8,16,10,6,12];
+  wave.querySelectorAll('span').forEach((s, i) => {
+    if (active) {
+      s.style.animation = anims[i % anims.length] + ' ' + (0.6 + (i * 0.1)) + 's ease-in-out infinite';
+      wave.classList.add('active');
+    } else {
+      s.style.animation = 'none';
+      s.style.height = heights[i] + 'px';
+      wave.classList.remove('active');
+    }
+  });
+}
+
+function seekAudio(e, id) {
+  const audio = document.getElementById(id + '-audio');
+  const bar = document.getElementById(id + '-bar');
+  const rect = bar.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = pct * audio.duration;
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+// Wire up audio progress for all players
+document.addEventListener('DOMContentLoaded', () => {
+  ['intro','paso','gc','sedona','buckeye','zion','pismo'].forEach(id => {
+    const audio = document.getElementById(id + '-audio');
+    if (!audio) return;
+    audio.addEventListener('timeupdate', () => {
+      const pct = (audio.currentTime / audio.duration) * 100 || 0;
+      document.getElementById(id + '-fill').style.width = pct + '%';
+      document.getElementById(id + '-time').textContent =
+        formatTime(audio.currentTime) + ' / ' + formatTime(audio.duration || 0);
+    });
+    audio.addEventListener('ended', () => {
+      document.getElementById(id + '-play-btn').textContent = '▶';
+      document.getElementById(id + '-play-btn').classList.remove('playing');
+      setWaveActive(id, false);
+      document.getElementById(id + '-fill').style.width = '0%';
+    });
+  });
+});
+
+// ── GALLERY REGISTRY ──
+// Gallery registry — built from DOM on load
+const galleries = {};
+let lbGallery = null;
+let lbIndex = 0;
+
+function buildGalleries() {
+  document.querySelectorAll('[data-gallery]').forEach(collage => {
+    const name = collage.dataset.gallery;
+    const imgs = Array.from(collage.querySelectorAll('img')).map(img => ({
+      src: img.src, alt: img.alt
+    }));
+    galleries[name] = imgs;
+  });
+}
+
+function memLightbox(index, gallery) {
+  lbGallery = gallery;
+  lbIndex = index;
+  showLbImage();
+  document.getElementById('mem-lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function showLbImage() {
+  const imgs = galleries[lbGallery];
+  document.getElementById('mem-lightbox-img').src = imgs[lbIndex].src;
+  document.getElementById('mem-lightbox-img').alt = imgs[lbIndex].alt;
+  document.getElementById('mem-lb-counter').textContent = (lbIndex + 1) + ' / ' + imgs.length;
+  document.getElementById('mem-lb-prev').disabled = lbIndex === 0;
+  document.getElementById('mem-lb-next').disabled = lbIndex === imgs.length - 1;
+}
+
+function closeLightbox() {
+  document.getElementById('mem-lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  buildGalleries();
+
+  // Close on backdrop click
+  document.getElementById('mem-lightbox').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('mem-lightbox')) closeLightbox();
+  });
+  document.getElementById('mem-lb-close').addEventListener('click', closeLightbox);
+
+  // Nav arrows
+  document.getElementById('mem-lb-prev').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (lbIndex > 0) { lbIndex--; showLbImage(); }
+  });
+  document.getElementById('mem-lb-next').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (lbIndex < galleries[lbGallery].length - 1) { lbIndex++; showLbImage(); }
+  });
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (!document.getElementById('mem-lightbox').classList.contains('open')) return;
+    if (e.key === 'ArrowLeft' && lbIndex > 0) { lbIndex--; showLbImage(); }
+    if (e.key === 'ArrowRight' && lbIndex < galleries[lbGallery].length - 1) { lbIndex++; showLbImage(); }
+    if (e.key === 'Escape') closeLightbox();
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el));
+});
+</script>
+</body>
+</html>
